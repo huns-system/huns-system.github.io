@@ -217,7 +217,7 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 </section>
 <div id="gate" hidden><div class="gbox" id="gbox"></div></div>
 <div id="fModal" class="imodal" hidden><div class="ibox" style="width:min(900px,100%)"><div class="ihead"><span id="fTitle"></span><button id="fClose" aria-label="닫기">✕</button></div>
-  <div style="padding:10px 14px;overflow:auto"><div id="fChart" style="height:420px"></div><div id="fTip" style="min-height:40px;margin-top:8px;font-size:13px"></div><div id="fBars"></div>
+  <div style="padding:10px 14px;overflow:auto"><div style="position:relative"><div id="fChart" style="height:440px"></div><div style="position:absolute;left:8px;bottom:30%;font-size:11px;color:#8a877f;pointer-events:none;border-top:1px dashed #333;right:70px;padding-top:2px">거래소 입출금 (▲ 출금 · ▼ 입금)</div></div><div id="fTip" style="min-height:40px;margin-top:8px;font-size:13px"></div><div id="fBars"></div>
   <p class="note">BSC 체인 거래소 지갑 기준(60 감시기, 라벨 있는 거래소·감시·배정·MM 지갑의 $1만 이상 이체를 1시간 단위로 묶음). 검증 안 된 정보 — 진입 근거 아님.</p></div></div></div>
 <div id="iModal" class="imodal" hidden><div class="ibox"><div class="ihead"><span id="iTitle"></span><button id="iClose" aria-label="닫기">✕</button></div>
   <div class="ibody"><div class="iimg"><img id="iImg" alt="종합 정보 차트"></div><div class="iside"><div id="iMeta"></div><div id="iHist" class="ihist"></div></div></div></div></div>
@@ -900,12 +900,17 @@ async function openFlow(base){
   const pr = precOf(bars.at(-1)[4]);
   const cs = ch.addCandlestickSeries({upColor:"#2fbf71", downColor:"#e5534b", borderVisible:false, wickUpColor:"#2fbf71", wickDownColor:"#e5534b", priceFormat:{type:"price",precision:pr,minMove:Math.pow(10,-pr)}});
   cs.setData(bars.map(k=>({time:k[0]+KST, open:k[1], high:k[2], low:k[3], close:k[4]})));
+  cs.priceScale().applyOptions({scaleMargins:{top:0.05, bottom:0.32}});   // 아래 30%는 입출금 화살표 칸
+  // 화살표 전용 칸: 봉과 겹치지 않게 보이지 않는 기준선(별도 축) 위에 찍는다
+  const fs = ch.addLineSeries({priceScaleId:"flow", color:"rgba(0,0,0,0)", lineWidth:1, lastValueVisible:false, priceLineVisible:false, crosshairMarkerVisible:false});
+  ch.priceScale("flow").applyOptions({scaleMargins:{top:0.84, bottom:0.1}, visible:false});
+  fs.setData(bars.map(k=>({time:k[0]+KST, value:0})));
   const mx = Math.max(1, ...tx.map(x=>x.usd)), t0 = bars[0][0];
   const byT = new Map();
   const mk = tx.filter(x=>x.t>=t0).map(x=>{ const t=x.t+KST; (byT.get(t)||byT.set(t,[]).get(t)).push(x);
     return {time:t, position:x.dir==="wd"?"belowBar":"aboveBar", shape:x.dir==="wd"?"arrowUp":"arrowDown", color:x.dir==="wd"?"#3fa7c4":"#ef6a5e",
             size: 0.6 + 2.4*Math.sqrt(x.usd/mx), text: x.usd>=mx*0.25? usd(x.usd):""}; }).sort((a,b)=>a.time-b.time);
-  cs.setMarkers(mk);
+  fs.setMarkers(mk);
   ch.timeScale().fitContent();
   ch.subscribeCrosshairMove(p=>{ if(!p||!p.time) return; const L = byT.get(p.time); if(!L) return;
     $("#fTip").innerHTML = L.map(x=>`<b style="color:${x.dir==="wd"?"#3fa7c4":"#ef6a5e"}">${x.dir==="wd"?"▲ 거래소 출금":"▼ 거래소 입금"}</b> ${kst(new Date(x.t*1000).toISOString())} KST · ${usd(x.usd)} · ${x.n}건${x.lab?` · ${esc(x.lab)}`:""}`).join("<br>"); });
