@@ -872,8 +872,9 @@ function renderBSC(){
     <div class="card" style="overflow-x:auto"><table><tr><th>시각 (KST)</th><th>종목</th><th>종류</th><th class="num">금액</th><th>보낸 곳 → 받은 곳</th><th></th></tr>${ev||'<tr><td colspan="6" class="mean">없음</td></tr>'}</table></div>`;
   el.querySelectorAll(".bbtn").forEach(r=>r.onclick=()=>openFlow(r.dataset.b));
 }
-let FLOWCH = null;
+let FLOWCH = null, FLOWP = "30", FLOWB = null;
 async function openFlow(base){
+  FLOWB = base;
   const B = OC.bsc||{};
   let tx = (B.tx7||{})[base];
   if(!tx){ // 예전 데이터(tx7 없음): 큰 이체 목록으로 대신
@@ -884,15 +885,16 @@ async function openFlow(base){
       const x = m.get(k)||{t:h,dir:d,usd:0,n:0,lab:""}; x.usd+=e.usd; x.n++; x.lab = x.lab || (d==="wd"? e.from_label : e.to_label) || ""; m.set(k,x); });
     tx = [...m.values()].sort((a,b)=>a.t-b.t);
   }
-  $("#fTitle").textContent = `${base} · 최근 7일 거래소 입출금`;
-  $("#fBars").innerHTML = "";
+  const days = +FLOWP, tf = days>7 ? "4h" : "1h", sec = days>7 ? 14400 : 3600;
+  $("#fTitle").innerHTML = `${esc(base)} · 거래소 입출금 <span class="seg" id="fPer" style="margin-left:10px;font-weight:400"><button data-v="7" class="${FLOWP==="7"?"on":""}">7일 · 1시간봉</button><button data-v="30" class="${FLOWP==="30"?"on":""}">30일 · 4시간봉</button></span>`;
+  $("#fPer").onclick = e => { const v=e.target.dataset?.v; if(!v||v===FLOWP) return; FLOWP=v; openFlow(base); };
   $("#fTip").innerHTML = `<span class="mean">마커에 마우스를 올리면 시각·금액·상대가 보인다. ▲ 출금(거래소에서 빠져나감) · ▼ 입금(거래소로 들어감)</span>`;
   $("#fModal").hidden = false;
   if(FLOWCH){ FLOWCH.remove(); FLOWCH=null; }
   const el = $("#fChart"); el.innerHTML = "";
   if(!window.LightweightCharts){ el.innerHTML = '<div class="mean" style="padding:20px">차트 라이브러리 없음</div>'; return; }
   let bars = [], sym = base+"USDT";
-  for(const s of [base+"USDT", "1000"+base+"USDT"]){ try{ bars = await liveBars(s, "1h", 170); sym = s; break; }catch(e){} }
+  for(const s of [base+"USDT", "1000"+base+"USDT"]){ try{ bars = await liveBars(s, tf, days*86400/sec + 2); sym = s; break; }catch(e){} }
   if(!bars.length){ el.innerHTML = '<div class="mean" style="padding:20px">가격 봉을 불러오지 못했다(선물 종목 이름이 다르거나 연결 막힘).</div>'; return; }
   const ch = LightweightCharts.createChart(el, {autoSize:true, layout:{background:{type:"solid",color:"#111"}, textColor:"#8a877f", fontSize:11},
     grid:{vertLines:{color:"#1b1b1b"}, horzLines:{color:"#1b1b1b"}}, timeScale:{timeVisible:true, borderColor:"#262626"}, rightPriceScale:{borderColor:"#262626"}, crosshair:{mode:0}});
@@ -901,6 +903,11 @@ async function openFlow(base){
   const cs = ch.addCandlestickSeries({upColor:"#2fbf71", downColor:"#e5534b", borderVisible:false, wickUpColor:"#2fbf71", wickDownColor:"#e5534b", priceFormat:{type:"price",precision:pr,minMove:Math.pow(10,-pr)}});
   cs.setData(bars.map(k=>({time:k[0]+KST, open:k[1], high:k[2], low:k[3], close:k[4]})));
   cs.priceScale().applyOptions({scaleMargins:{top:0.12, bottom:0.12}});   // 위아래 화살표 자리
+  // 봉 단위로 다시 묶음(같은 봉·같은 방향 합)
+  const agg = new Map();
+  tx.forEach(x=>{ const bt = Math.floor(x.t/sec)*sec, k = bt+x.dir; const y = agg.get(k)||{t:bt,dir:x.dir,usd:0,n:0,lab:"",parts:[]};
+    y.usd+=x.usd; y.n+=x.n; y.lab = y.lab||x.lab; y.parts.push(x); agg.set(k,y); });
+  tx = [...agg.values()].sort((a,b)=>a.t-b.t);
   const mx = Math.max(1, ...tx.map(x=>x.usd)), t0 = bars[0][0];
   const byT = new Map();
   const mk = tx.filter(x=>x.t>=t0).map(x=>{ const t=x.t+KST; (byT.get(t)||byT.set(t,[]).get(t)).push(x);
@@ -910,7 +917,9 @@ async function openFlow(base){
   ch.timeScale().fitContent();
   ch.subscribeCrosshairMove(p=>{ if(!p||!p.time) return; const L = byT.get(p.time); if(!L) return;
     $("#fTip").innerHTML = L.map(x=>`<b style="color:${x.dir==="wd"?"#3fa7c4":"#ef6a5e"}">${x.dir==="wd"?"▲ 거래소 출금":"▼ 거래소 입금"}</b> ${kst(new Date(x.t*1000).toISOString())} KST · ${usd(x.usd)} · ${x.n}건${x.lab?` · ${esc(x.lab)}`:""}`).join("<br>"); });
-  if(!mk.length) $("#fTip").innerHTML = '<span class="mean">최근 7일 이 종목의 거래소 입출금 기록이 없다($1만 이상 분류 이체 기준).</span>';
+  if(!mk.length) $("#fTip").innerHTML = `<span class="mean">이 기간 이 종목의 거래소 입출금 기록이 없다($1만 이상 분류 이체 기준).</span>`;
+  const first = tx.length? tx[0].t : null;
+  $("#fBars").innerHTML = `<div class="mean" style="margin-top:4px">감시기 기록 시작: 2026-11-21 — 그 전 구간은 화살표가 없다(기록이 쌓이는 중).${first?` 이 종목 첫 기록 ${kst(new Date(first*1000).toISOString())} KST.`:""}</div>`;
 }
 function renderOnchain(){
   OC.charts.forEach(c=>c.remove()); OC.charts=[];
