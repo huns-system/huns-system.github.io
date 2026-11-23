@@ -187,8 +187,10 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 <section id="now" class="on">
   <div class="grid" id="kpis"></div>
   <div class="brief"><h3 id="briefTitle">이번 시간 브리핑</h3><div id="brief"></div></div>
-  <h2>열린 신호 <span class="sub">조건을 모두 통과한 신호만 · 데이터와 차트</span></h2>
+  <h2>보유 중 <span class="sub" id="openSub">레인 조건을 모두 통과해 진입한 종목 · 데이터와 차트</span></h2>
   <div id="openCards"></div>
+  <h2>HS · 선별 <span class="sub" id="hsSub">매일 09:00 KST 일봉 마감 직후 선별</span></h2>
+  <div id="hsBox"></div>
   <h2>감시 목록 <span class="sub">조건 일부만 충족 — 진입 근거 아님, 검증 안 된 관찰용</span></h2>
   <div class="cols"><div class="card" id="watchNX"></div><div class="card" id="watchCB"></div></div>
 </section>
@@ -232,6 +234,8 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 </section>
 
 <section id="onchain">
+  <div id="bscWrap"></div>
+  <h2 id="ocTitle">지정 지갑 추적</h2>
   <div id="ocWrap"></div>
   <p class="note">등록한 지갑의 토큰 들고 남을 매시 체인에서 직접 읽어 그린다. 금색 계단 = 지갑 보유량(왼쪽 축), 흰 선 = 바이낸스 선물 4시간봉(오른쪽 축). 거래소 여부는 주소 라벨 목록 기준이라 라벨이 없는 입금 주소는 '미분류'로 남는다. <b>관찰 기록이며 진입 근거가 아니다</b> — 우리 연구에서 지갑 이동 단독은 아직 엣지가 확인되지 않았다(R117·OC9).</p>
 </section>
@@ -264,12 +268,16 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 </section>
 
 <section id="log">
+  <h2>엔진 거래 기록 <span class="sub" id="trSub">레인 진입 → 청산 전부 · 수수료 반영 · 가격 기준 수익과 레버리지 반영 수익</span></h2>
+  <div class="card" style="overflow-x:auto"><table id="trTable"></table></div>
   <h2>모든 신호 <span class="sub">성공·실패 전부 · 비용 0.45%와 실제 펀딩 반영 · 15분봉으로 청산 규칙 재생</span></h2>
   <div class="card" style="overflow-x:auto"><table id="logTable"></table></div>
 </section>
 
 <section id="score">
-  <h2>성적판 <span class="sub" id="scoreSub"></span></h2>
+  <h2>엔진 성적 <span class="sub" id="escoreSub"></span></h2>
+  <div class="card" style="overflow-x:auto"><table id="escoreTable"></table></div>
+  <h2>성적판 (재생 기준) <span class="sub" id="scoreSub"></span></h2>
   <div class="card" style="overflow-x:auto"><table id="scoreTable"></table></div>
   <p class="note">실시간 성적은 2026-11-09 이후 진입분만 센다(홀드아웃). n &lt; 30이면 방향성 참고. 규칙은 결과와 상관없이 바꾸지 않는다. 계좌 합계는 재료별 레버리지·비중을 곱한 단순 합(복리 아님).</p>
 </section>
@@ -303,9 +311,9 @@ async function sbFiles(names){
 }
 async function load(){
   if (window.__DATA__ && !window.__SB_FAKE__) return window.__DATA__;
-  const m = await sbFiles(["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json"]);
+  const m = await sbFiles(["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json"]);
   return {latest:m["latest.json"], signals:m["signals.json"]||[], score:m["scoreboard.json"], breadth:m["breadth.json"],
-          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"]};
+          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"]};
 }
 function gate(view, msg){
   const G = $("#gbox"); $("#gate").hidden = false;
@@ -505,30 +513,70 @@ function watchBox(title, list){
   <table><tr><th>종목</th><th class="num">충족</th></tr>${list.map(w=>`<tr><td class="num" style="text-align:left">${esc(w.symbol)}</td><td class="num">${w.met}/${w.of}</td></tr>`).join("")}</table>`;
 }
 
+const holdTxt = h => !h ? "보유 집중: 조회 안 됨" : `보유 집중: 상위 10 지갑 ${h.top10!=null?Math.round(h.top10*(h.top10<=1?100:1))+"%":"—"}${h.contract!=null?` (계약·잠금 ${Math.round(h.contract*(h.contract<=1?100:1))}%)`:""}${h.n?` · 보유자 ${nfmt(h.n)}`:""}`;
+function engCard(p){
+  const s = {symbol:p.symbol, material:p.lane, version:"엔진", signal_ts:p.t_in,
+    story:`${MAT[p.lane]?.name||p.lane} 레인 조건을 모두 통과해 진입한 종목.`,
+    data:[{label:"진입 시각", value:kst(p.t_in)+" KST"},{label:"진입가", value:px(p.entry)},{label:"현재 (가격 기준)", value:pct(p.ret)},
+          {label:"레버리지", value:p.lev? p.lev+"배":"—"},{label:"보유 만료", value:p.until? kst(p.until)+" KST":"—"}]};
+  return card(s).replace("신호 "+kst(p.t_in), "진입 "+kst(p.t_in));
+}
+function hsList(t, arr, withHold){
+  if(!arr || !arr.length) return `<div><h3 style="margin:0 0 6px;font-size:15px">${t} · 0</h3><div class="mean">없음</div></div>`;
+  return `<div><h3 style="margin:0 0 6px;font-size:15px">${t} · ${arr.length}</h3><table>${arr.map(x=>`<tr><td class="num" style="text-align:left">${esc(x.symbol)}</td>${withHold?`<td class="mean">${(x.hold&&x.hold.top10!=null&&(x.hold.top10>=0.9||x.hold.top10>=90))?"⚠️ ":""}${esc(holdTxt(x.hold))}</td>`:""}</tr>`).join("")}</table></div>`;
+}
+function renderHS(H){
+  if(!H){ $("#hsBox").innerHTML = `<div class="empty">아직 선별 기록 없음</div>`; return; }
+  $("#hsSub").textContent = `${kst(H.date)} KST 마감분${H.stale?" · 최근 3일 기록 없음":""} · 매일 09:00 KST 갱신`;
+  $("#hsBox").innerHTML = `<div class="card"><div class="cols">${hsList("선별 통과 (진입 대상)", H.pass, true)}${hsList("선별 통과 · 관찰만 (추가 필터 탈락)", H.watch, true)}</div>
+    <div class="cols" style="margin-top:12px">${hsList("선별 근접 (조건 하나 모자람 · 진입 안 함)", H.near, false)}${hsList("7일 간격으로 제외", H.gap, false)}</div>
+    <p class="note" style="margin-top:10px">보유 집중은 상위 10개 지갑이 가진 비율(계약·금고·잠금 주소 포함)이다. 90% 이상이면 ⚠️. 표시용이며 필터가 아니다.</p></div>`;
+}
 function renderNow(D){
-  const L = D.latest||{}, rg = L.regime||{}, act = L.active||{};
+  const L = D.latest||{}, rg = L.regime||{}, act = L.active||{}, E = D.live;
   const sigs = D.signals||[];
   const open = sigs.filter(s=>s.outcome && s.outcome.status==="open");
   const lt = D.breadth?.latest;
-  const onoff = k => act[k]===true ? `<span class="on-c">가동</span>` : act[k]===false ? `<span class="off-c">휴면</span>` : `<span class="off-c">판정 대기</span>`;
+  const st = x => x.state==="가동" ? `<span class="on-c">${esc(x.name)}</span>` : `<span class="off-c">${esc(x.name)}</span>`;
+  const lanesTxt = E&&E.lanes&&E.lanes.length ? E.lanes.map(st).join(" · ")
+    : ["EW","CB","NX","T20S"].map(k=>act[k]===true?`<span class="on-c">${MAT[k].name}</span>`:`<span class="off-c">${MAT[k].name}</span>`).join(" · ");
+  const eopen = E? (E.open||[]) : [];
   $("#kpis").innerHTML = [
-    ["국면", rg.uptrend===true?"상승장":rg.uptrend===false?"약세장":"판정 대기", ""],
-    ["재료 상태", `<span style="font-size:14px">EW ${onoff("EW")} · CB ${onoff("CB")}<br>NX ${onoff("NX")} · T20S+ ${onoff("T20S")}</span>`, ""],
-    ["열린 신호", open.length+"건", "섀도 포함"],
+    ["국면", rg.uptrend===true?"상승장":rg.uptrend===false?"약세장":"판정 대기", E&&E.gate? `알트 ${E.gate.alt_up?"위":"아래"} · BTC ${E.gate.btc_up?"위":"아래"} (장기 평균 대비)`:""],
+    ["레인", `<span style="font-size:13px;line-height:1.6">${lanesTxt}</span>`, "초록 = 지금 국면에서 진입 가능"],
+    ["보유 중", (eopen.length+open.length)+"건", E? `엔진 ${E.engine.mode||""} · ${E.engine.alive?"실행 중":"<span class='neg'>응답 없음</span>"}`:""],
     ["알트 30일선 위 비율", lt? lt.p30+"%" : "—", lt? `90일 ${lt.p90}% · 180일 ${lt.p180}%` : ""],
   ].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
   $("#briefTitle").textContent = `이번 시간 브리핑 · ${kst(L.generated_at)} KST`;
   $("#brief").innerHTML = (L.brief||["데이터 없음"]).map(x=>`<p>${esc(x)}</p>`).join("") + (L.errors&&L.errors.length? `<p class="err">${L.errors.map(esc).join("<br>")}</p>`:"");
-  $("#openCards").innerHTML = open.length ? open.map(card).join("") : `<div class="empty">열린 신호 없음. v3.6은 하루 0~몇 건이 정상이며, 조건을 낮춰 채우지 않는다.</div>`;
+  if(E) $("#openSub").textContent = `엔진(${E.engine.mode||""}) 보유 · 레인 조건을 모두 통과해 진입한 종목 · 데이터와 차트`;
+  const cards = eopen.map(engCard).concat(open.map(card));
+  $("#openCards").innerHTML = cards.length ? cards.join("") : `<div class="empty">보유 종목 없음. 하루 0~몇 건이 정상이며, 조건을 낮춰 채우지 않는다.</div>`;
+  renderHS(E? E.hs : null);
   const W = L.watch||{};
   $("#watchNX").innerHTML = watchBox("NX 근접", W.nx);
   $("#watchCB").innerHTML = watchBox("CB 근접", W.cb);
 }
 
+function renderTrades(D){
+  const E = D.live, rows = E? (E.trades||[]) : [];
+  if(E) $("#trSub").textContent = `엔진(${E.engine.mode||""}) · ${rows.length}건 · 수수료 반영 · 가격 기준 수익과 레버리지 반영 수익`;
+  $("#trTable").innerHTML = `<tr><th>진입 (KST)</th><th>청산 (KST)</th><th>종목</th><th>레인</th><th class="num">진입가</th><th class="num">청산가</th><th class="num">가격 기준</th><th class="num">레버리지 반영</th><th class="num">최저</th><th class="num">최고</th><th>사유</th></tr>` +
+   (rows.length? rows.map(t=>`<tr><td class="num" style="text-align:left">${kst(t.t_in)}</td><td class="num" style="text-align:left">${kst(t.t_out)}</td><td class="num" style="text-align:left">${esc(t.symbol)}</td><td><span class="tag m-${t.lane}">${esc(MAT[t.lane]?.name||t.lane)}</span></td><td class="num">${px(t.entry)}</td><td class="num">${px(t.exit)}</td><td class="num ${cls(t.ret)}">${pct(t.ret)}</td><td class="num ${cls(t.roe)}">${pct(t.roe,1)}</td><td class="num">${pct(t.mae,1)}</td><td class="num">${pct(t.mfe,1)}</td><td class="mean">${esc(t.reason)}</td></tr>`).join("")
+    : `<tr><td colspan="11" class="mean">아직 청산된 거래 없음</td></tr>`);
+}
+function renderEScore(D){
+  const E = D.live; if(!E){ $("#escoreTable").innerHTML = "<tr><td class='mean'>엔진 기록 없음</td></tr>"; return; }
+  const S = E.score; $("#escoreSub").textContent = `엔진(${E.engine.mode||""}) 실제 체결 기준 · 수수료 반영 · n < 30이면 방향성 참고`;
+  const f = (x,k,d) => x && x.n ? (k==="win"? x[k]+"%" : k==="n"||k==="max_losing_streak" ? x[k] : pct(x[k],d)) : "—";
+  const row = (name,x,b) => `<tr><td>${b?"<b>":""}${esc(name)}${b?"</b>":""}</td><td class="num">${f(x,"n")}</td><td class="num ${cls(x.mean)}">${f(x,"mean")}</td><td class="num">${f(x,"median")}</td><td class="num">${f(x,"win")}</td><td class="num">${f(x,"mae_med",1)}</td><td class="num">${f(x,"max_losing_streak")}</td><td class="num ${cls(x.acct)}">${f(x,"acct")}</td><td class="mean">${x.n? esc(x.label):"기록 없음"}</td></tr>`;
+  $("#escoreTable").innerHTML = `<tr><th>레인</th><th class="num">n</th><th class="num">평균</th><th class="num">중앙</th><th class="num">승률</th><th class="num">최저 중앙</th><th class="num">최대 연패</th><th class="num">계좌 영향</th><th>판정</th></tr>` +
+    Object.values(S.lanes).map(x=>row(x.name,x)).join("") + row("합계", S.total, true);
+}
 function renderLog(D){
   const rows = (D.signals||[]);
   $("#logTable").innerHTML = `<tr><th>신호 (KST)</th><th>종목</th><th>재료</th><th class="num">진입가</th><th>상태</th><th class="num">결과</th><th class="num">최저</th><th class="num">최고</th><th class="num">계좌</th></tr>` +
-   (rows.length? rows.map(s=>{const o=s.outcome||{};return `<tr><td class="num" style="text-align:left">${kst(s.signal_ts)}</td><td class="num" style="text-align:left">${esc(s.symbol)}</td><td><span class="tag m-${s.material}">${esc(s.material==="T20S"?"T20S+":s.material)}</span>${s.holdout?"":' <span class="mean">홀드아웃 전</span>'}</td><td class="num">${px(s.entry_px)}</td><td>${o.status==="closed"?esc(o.reason):o.status==="open"?"진행 중":"대기"}</td><td class="num ${cls(o.ret_net)}">${pct(o.ret_net)}</td><td class="num">${pct(o.mae,1)}</td><td class="num">${pct(o.mfe,1)}</td><td class="num ${cls(o.acct_pct)}">${o.acct_pct!=null?pct(o.acct_pct):"—"}</td></tr>`}).join("") : `<tr><td colspan="9" class="mean">아직 기록 없음</td></tr>`);
+   (rows.length? rows.map(s=>{const o=s.outcome||{};return `<tr><td class="num" style="text-align:left">${kst(s.signal_ts)}</td><td class="num" style="text-align:left">${esc(s.symbol)}</td><td><span class="tag m-${s.material}">${esc(MAT[s.material]?.name||s.material)}</span>${s.holdout?"":' <span class="mean">홀드아웃 전</span>'}</td><td class="num">${px(s.entry_px)}</td><td>${o.status==="closed"?esc(o.reason):o.status==="open"?"진행 중":"대기"}</td><td class="num ${cls(o.ret_net)}">${pct(o.ret_net)}</td><td class="num">${pct(o.mae,1)}</td><td class="num">${pct(o.mfe,1)}</td><td class="num ${cls(o.acct_pct)}">${o.acct_pct!=null?pct(o.acct_pct):"—"}</td></tr>`}).join("") : `<tr><td colspan="9" class="mean">아직 기록 없음</td></tr>`);
 }
 
 function renderScore(D){
@@ -627,9 +675,9 @@ function chartItems(){
 function cellHead(x){
   if(x.kind==="signal"){
     const st = x.status==="open" ? `진행 중 <span class="${cls(x.ret)}">${pct(x.ret)}</span>` : `${esc(x.reason||"")} <span class="${cls(x.ret)}">${pct(x.ret)}</span>`;
-    return `<span class="s">${esc(x.symbol)}</span><span class="tag m-${x.material}">${esc(x.material==="T20S"?"T20S+":x.material)}</span><span class="r">${st}</span>`;
+    return `<span class="s">${esc(x.symbol)}</span><span class="tag m-${x.material}">${esc(MAT[x.material]?.name||x.material)}</span><span class="r">${st}</span>`;
   }
-  return `<span class="s">${esc(x.symbol)}</span><span class="tag">${esc(x.group)} ${x.met}/${x.of}</span><span class="r mean">감시</span>`;
+  return `<span class="s">${esc(x.symbol)}</span><span class="tag">${esc(x.group)}${x.met!=null?` ${x.met}/${x.of}`:""}</span><span class="r mean">감시</span>`;
 }
 function drawOne(el, x, bars){
   const last = bars.at(-1)?.[4] || 1, pr = precOf(last);
@@ -746,6 +794,37 @@ function ocCard(c){
   </div>`;
 }
 const iso = t => new Date(t*1000).toISOString();
+function bscBars(rows){
+  if(!rows||!rows.length) return "";
+  const W=560,H=150,pad=28, n=rows.length, bw=(W-pad*2)/n;
+  const mx=Math.max(1,...rows.map(r=>Math.max(r.dep,r.wd)));
+  const y=v=>H/2 - v/mx*(H/2-14);
+  const bars=rows.map((r,i)=>{const x=pad+i*bw;
+    return `<rect x="${x+1}" y="${y(r.wd)}" width="${bw/2-1}" height="${H/2-y(r.wd)}" fill="#3fa7c4"><title>${r.day} 출금 ${usd(r.wd)}</title></rect>
+            <rect x="${x+bw/2}" y="${H/2}" width="${bw/2-1}" height="${y(-r.dep)-H/2}" fill="#ef6a5e"><title>${r.day} 입금 ${usd(r.dep)}</title></rect>
+            ${i%Math.ceil(n/7)===0?`<text x="${x}" y="${H-2}" fill="#8a877f" font-size="10">${r.day.slice(5)}</text>`:""}`;}).join("");
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px"><line x1="${pad}" x2="${W-pad}" y1="${H/2}" y2="${H/2}" stroke="#333"/>${bars}
+    <text x="0" y="12" fill="#3fa7c4" font-size="10">출금↑ ${usd(mx)}</text><text x="0" y="${H-14}" fill="#ef6a5e" font-size="10">입금↓</text></svg>`;
+}
+function renderBSC(){
+  const B = OC.bsc, el = $("#bscWrap");
+  if(!B){ el.innerHTML = ""; $("#ocTitle").style.display="none"; return; }
+  $("#ocTitle").style.display="";
+  const st = B.status||{};
+  const top = (B.rank||[]).filter(r=>r.net7>0).slice(0,10), bot = (B.rank||[]).filter(r=>r.net7<0).sort((a,b)=>a.net7-b.net7).slice(0,10);
+  const rk = (t,arr,c) => `<div><h3 style="margin:0 0 6px;font-size:15px">${t}</h3><table><tr><th>종목</th><th class="num">7일 순출금</th><th class="num">출금</th><th class="num">입금</th></tr>${
+    arr.length? arr.map(r=>`<tr class="bscrow" data-b="${esc(r.base)}" style="cursor:pointer"><td class="num" style="text-align:left">${esc(r.base)}</td><td class="num" style="color:${c}">${usd(r.net7)}</td><td class="num">${usd(r.wd7)}</td><td class="num">${usd(r.dep7)}</td></tr>`).join("") : '<tr><td colspan="4" class="mean">없음</td></tr>'}</table></div>`;
+  const al = (B.alerts||[]).slice(0,15).map(a=>`<tr><td class="num" style="text-align:left">${kst(a.t)}</td><td class="num" style="text-align:left">${esc(a.base)}</td><td style="color:${a.kind==="매집"?"#3fa7c4":a.kind==="분배"?"#ef6a5e":"#f2c14e"}">${esc(a.kind)}</td><td class="num">${usd(a.usd)}</td><td class="mean">${esc(a.note)}</td></tr>`).join("");
+  const ev = (B.events||[]).slice(0,40).map(e=>`<tr><td class="num" style="text-align:left">${kst(e.t)}</td><td class="num" style="text-align:left">${esc(e.base)}</td><td>${esc(e.kind)}</td><td class="num">${usd(e.usd)}</td><td class="mean">${esc(e.from_label||e.from)} → ${esc(e.to_label||e.to)}</td><td>${e.tx?`<a href="https://bscscan.com/tx/${esc(e.tx)}" target="_blank" rel="noopener">tx</a>`:""}</td></tr>`).join("");
+  el.innerHTML = `<h2>BSC 거래소 흐름 <span class="sub">알파 BSC 선물 종목 · 5분마다 수집 · 매시 갱신 · 감시기 ${st.ok?'<span class="pos">정상</span>':'<span class="neg">확인 필요</span>'} ${esc(st.t||"")}</span></h2>
+    <div class="card"><div class="cols">${rk("거래소에서 빠져나감 (순출금) 상위", top, "#3fa7c4")}${rk("거래소로 들어감 (순입금) 상위", bot, "#ef6a5e")}</div>
+      <div id="bscChart" style="margin-top:12px"><div class="mean">종목을 누르면 최근 14일 일별 출금·입금 막대가 나온다.</div></div></div>
+    <h2>지갑 이동 알림 <span class="sub">검증 안 된 알림 · 정보용</span></h2>
+    <div class="card" style="overflow-x:auto"><table><tr><th>시각 (KST)</th><th>종목</th><th>종류</th><th class="num">금액</th><th>설명</th></tr>${al||'<tr><td colspan="5" class="mean">최근 알림 없음</td></tr>'}</table></div>
+    <h2>큰 이체 <span class="sub">최근 7일 · ${usd(B.min_usd)} 이상 · 주소는 앞뒤만</span></h2>
+    <div class="card" style="overflow-x:auto"><table><tr><th>시각 (KST)</th><th>종목</th><th>종류</th><th class="num">금액</th><th>보낸 곳 → 받은 곳</th><th></th></tr>${ev||'<tr><td colspan="6" class="mean">없음</td></tr>'}</table></div>`;
+  el.querySelectorAll(".bscrow").forEach(r=>r.onclick=()=>{ const b=r.dataset.b; $("#bscChart").innerHTML = `<div class="mean" style="margin-bottom:4px"><b>${esc(b)}</b> 최근 14일 · 파랑 = 거래소 출금, 빨강 = 거래소 입금</div>` + bscBars((B.flows||{})[b]); });
+}
 function renderOnchain(){
   OC.charts.forEach(c=>c.remove()); OC.charts=[];
   const D = OC.data;
@@ -882,7 +961,7 @@ function showTab(t){
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
   document.querySelectorAll("section").forEach(s=>s.classList.toggle("on", s.id===t));
   if(t==="charts" && !CH.drawn && window.LightweightCharts){ CH.drawn=true; renderCharts(); }
-  if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderOnchain(); }
+  if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); }
   if(t==="members"){ MV.armed = null; renderMembers(); }
 }
 $("#nav").onclick = e => { const t=e.target.dataset?.t; if(!t) return; showTab(t); if(location.hash.slice(1)!==t) history.replaceState(null,"","#"+t); };
@@ -893,10 +972,10 @@ async function boot(){
   const D = await load();
   if (window.__DATA__ && window.__DATA__.demo) $("#demo").style.display="block";
   $("#stamp").innerHTML = D.latest ? `마지막 갱신 ${kst(D.latest.generated_at)} KST<br>다음 갱신 매시 5분` : "데이터를 불러오지 못했습니다";
-  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; RK.data = D.ranks; renderRank();
-  if (OC.drawn) renderOnchain();
+  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; RK.data = D.ranks; renderRank();
+  if (OC.drawn){ renderBSC(); renderOnchain(); }
   if (CH.drawn) renderCharts();
-  renderNow(D); drawCardCharts(); loadInfo(); renderLog(D); renderScore(D); renderBreadth();
+  renderNow(D); drawCardCharts(); loadInfo(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); renderBreadth();
   const h = location.hash.slice(1); if (h && document.getElementById(h)) showTab(h);
 }
 if (sbClient()) SB.auth.onAuthStateChange((ev) => {
