@@ -121,6 +121,12 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 .icard .m .t{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
 .icard .m .rs{font-size:13px;color:#d4d1c9;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tag.k-entry{border-color:#2fbf7166;color:#5fd897}.tag.k-onchain{border-color:#3fa7c466;color:#6cc3dc}.tag.k-move{border-color:#d9a43a66;color:var(--warn)}
+.tvgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.tvgrid .tvc{height:260px;background:#111;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+@media(max-width:900px){.tvgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tagdemo{background:#3a2f12;color:#f2c14e;border:1px solid #6b5520}
+.bbtn{background:none;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:1px 8px;cursor:pointer;font:inherit;font-size:12px}
+.bbtn:hover{border-color:#3fa7c4;color:#3fa7c4}
 .imodal{position:fixed;inset:0;background:#000c;z-index:50;display:flex;align-items:center;justify-content:center;padding:16px}
 .imodal[hidden]{display:none}
 .ibox{background:var(--bg);border:1px solid var(--line);border-radius:12px;width:min(1280px,100%);max-height:100%;display:flex;flex-direction:column;overflow:hidden}
@@ -210,6 +216,9 @@ svg text{font-family:'Noto Sans KR',sans-serif}
   <p class="note">가입은 아이디·닉네임·비밀번호로만 받는다(이메일 없음). 비밀번호를 잊은 회원은 '비번 초기화'로 임시 비밀번호를 만들어 알려준다. 가입한 사람은 '대기'로 들어온다. 승인한 회원만 데이터와 차트 그림을 읽을 수 있다(데이터베이스 규칙으로 막음). 일반 회원은 로그인 후 48시간이 지나면 다시 로그인해야 하고, 관리자는 계속 유지된다. 강퇴하면 그 회원 화면은 5분 안에 닫히고 데이터도 바로 막힌다. 접속 수는 30분 넘게 비었다가 다시 들어오면 1회로 센다. 버튼은 두 번 눌러야 실행된다.</p>
 </section>
 <div id="gate" hidden><div class="gbox" id="gbox"></div></div>
+<div id="fModal" class="imodal" hidden><div class="ibox" style="width:min(900px,100%)"><div class="ihead"><span id="fTitle"></span><button id="fClose" aria-label="닫기">✕</button></div>
+  <div style="padding:10px 14px;overflow:auto"><div id="fChart" style="height:340px"></div><div id="fTip" style="min-height:40px;margin-top:8px;font-size:13px"></div><div id="fBars"></div>
+  <p class="note">BSC 체인 거래소 지갑 기준(60 감시기, 라벨 있는 거래소·감시·배정·MM 지갑의 $1만 이상 이체를 1시간 단위로 묶음). 검증 안 된 정보 — 진입 근거 아님.</p></div></div></div>
 <div id="iModal" class="imodal" hidden><div class="ibox"><div class="ihead"><span id="iTitle"></span><button id="iClose" aria-label="닫기">✕</button></div>
   <div class="ibody"><div class="iimg"><img id="iImg" alt="종합 정보 차트"></div><div class="iside"><div id="iMeta"></div><div id="iHist" class="ihist"></div></div></div></div></div>
 
@@ -225,10 +234,12 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 <section id="charts">
   <div class="ctool">
     <div class="seg" id="cShow"><span class="lb">보기</span><button data-v="all" class="on">전체</button><button data-v="signal">신호</button><button data-v="watch">감시</button></div>
-    <div class="seg" id="cTf"><span class="lb">봉</span><button data-v="5m">5m</button><button data-v="15m" class="on">15m</button><button data-v="1h">1h</button><button data-v="4h">4h</button></div>
+    <div class="seg" id="cTf"><span class="lb">봉</span><button data-v="15m" class="on">15분</button><button data-v="30m">30분</button><button data-v="1h">1시간</button><button data-v="4h">4시간</button><button data-v="1d">일봉</button><button data-v="1w">주봉</button></div>
     <div class="seg" id="cCols"><span class="lb">칸</span><button data-v="1">1</button><button data-v="2">2</button><button data-v="3" class="on">3</button><button data-v="4">4</button></div>
     <span class="live" id="cLive"></span>
   </div>
+  <div class="cgroup">고정 차트 · 트레이딩뷰</div>
+  <div class="tvgrid" id="tvGrid"><div class="tvc" id="tv_BTC"></div><div class="tvc" id="tv_USDTD"></div><div class="tvc" id="tv_USDCD"></div><div class="tvc" id="tv_BTCD"></div></div>
   <div id="cWrap"></div>
   <p class="note">선: <span style="color:#e8e6e1">진입</span> · <span style="color:var(--down)">손절</span> · <span style="color:var(--up)">익절</span> · <span style="color:var(--warn)">현재 손절선</span> · <span style="color:#7fb2f2">dmax / dmin = 최근 24시간 고가·저가</span>. 신호 종목은 진입 시점에 ▲ 표시. 바이낸스에 직접 붙으면 1분마다 갱신, 막혀 있으면 매시 스냅샷(15분봉 2일치)을 보여준다. 감시 종목 차트는 진입 근거가 아니다.</p>
 </section>
@@ -268,18 +279,22 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 </section>
 
 <section id="log">
-  <h2>엔진 거래 기록 <span class="sub" id="trSub">레인 진입 → 청산 전부 · 수수료 반영 · 가격 기준 수익과 레버리지 반영 수익</span></h2>
+  <h2>거래 기록 <span class="sub" id="trSub">레인 진입 → 청산 전부 · 수수료 반영 · 가격 기준 수익과 레버리지 반영 수익</span></h2>
   <div class="card" style="overflow-x:auto"><table id="trTable"></table></div>
-  <h2>모든 신호 <span class="sub">성공·실패 전부 · 비용 0.45%와 실제 펀딩 반영 · 15분봉으로 청산 규칙 재생</span></h2>
-  <div class="card" style="overflow-x:auto"><table id="logTable"></table></div>
+  <div hidden><h2>모든 신호 (재생)</h2>
+  <div class="card" style="overflow-x:auto"><table id="logTable"></table></div></div>
 </section>
 
 <section id="score">
-  <h2>엔진 성적 <span class="sub" id="escoreSub"></span></h2>
+  <h2>실거래 성적 <span class="sub" id="escoreSub"></span></h2>
   <div class="card" style="overflow-x:auto"><table id="escoreTable"></table></div>
+  <h2>데모 성적 <span class="tag tagdemo">데모</span> <span class="sub">바이비트 데모 계좌(가짜 돈) · 실거래 성적에 섞지 않음</span></h2>
+  <div class="card" style="overflow-x:auto"><table id="dscoreTable"></table></div>
+  <div hidden>
   <h2>성적판 (재생 기준) <span class="sub" id="scoreSub"></span></h2>
   <div class="card" style="overflow-x:auto"><table id="scoreTable"></table></div>
-  <p class="note">실시간 성적은 2026-11-09 이후 진입분만 센다(홀드아웃). n &lt; 30이면 방향성 참고. 규칙은 결과와 상관없이 바꾸지 않는다. 계좌 합계는 재료별 레버리지·비중을 곱한 단순 합(복리 아님).</p>
+  </div>
+  <p class="note">계좌 영향 = 각 거래 손익 ÷ 진입 당시 계좌의 단순 합(복리 아님). n &lt; 30이면 방향성 참고. 규칙은 결과와 상관없이 바꾸지 않는다.</p>
 </section>
 
 
@@ -497,7 +512,7 @@ async function drawCardCharts(){
   const items = CH.snap?.items||[];
   for(const el of document.querySelectorAll(".ccv")){
     const x = items.find(i=>i.symbol===el.dataset.s && i.kind==="signal"); if(!x) continue;
-    if(CH.live===null){ try{ await liveBars(x.symbol,"15m"); CH.live=true; }catch(e){ CH.live=false; } }
+    if(CH.live===null){ try{ await liveBars("BTCUSDT","15m",2); CH.live=true; }catch(e){ CH.live=false; } }
     let bars = x.bars||[];
     if(CH.live){ try{ bars = await liveBars(x.symbol,"15m"); }catch(e){} }
     if(bars.length) CARD.push(drawOne(el, x, bars));
@@ -519,7 +534,8 @@ function engCard(p){
     story:`${MAT[p.lane]?.name||p.lane} 레인 조건을 모두 통과해 진입한 종목.`,
     data:[{label:"진입 시각", value:kst(p.t_in)+" KST"},{label:"진입가", value:px(p.entry)},{label:"현재 (가격 기준)", value:pct(p.ret)},
           {label:"레버리지", value:p.lev? p.lev+"배":"—"},{label:"보유 만료", value:p.until? kst(p.until)+" KST":"—"}]};
-  return card(s).replace("신호 "+kst(p.t_in), "진입 "+kst(p.t_in));
+  const demo = (window.__LIVE__?.engine?.mode||"") !== "실거래";
+  return card(s).replace("신호 "+kst(p.t_in), "진입 "+kst(p.t_in)).replace('<button class="infobtn"', (demo?'<span class="tag tagdemo">데모</span>':"")+'<button class="infobtn"');
 }
 function hsList(t, arr, withHold){
   if(!arr || !arr.length) return `<div><h3 style="margin:0 0 6px;font-size:15px">${t} · 0</h3><div class="mean">없음</div></div>`;
@@ -560,18 +576,21 @@ function renderNow(D){
 
 function renderTrades(D){
   const E = D.live, rows = E? (E.trades||[]) : [];
-  if(E) $("#trSub").textContent = `엔진(${E.engine.mode||""}) · ${rows.length}건 · 수수료 반영 · 가격 기준 수익과 레버리지 반영 수익`;
+  if(E) $("#trSub").textContent = `${rows.length}건 · 수수료 반영 · 가격 기준 수익과 레버리지 반영 수익 · 데모 = 바이비트 데모 계좌(가짜 돈)`;
   $("#trTable").innerHTML = `<tr><th>진입 (KST)</th><th>청산 (KST)</th><th>종목</th><th>레인</th><th class="num">진입가</th><th class="num">청산가</th><th class="num">가격 기준</th><th class="num">레버리지 반영</th><th class="num">최저</th><th class="num">최고</th><th>사유</th></tr>` +
-   (rows.length? rows.map(t=>`<tr><td class="num" style="text-align:left">${kst(t.t_in)}</td><td class="num" style="text-align:left">${kst(t.t_out)}</td><td class="num" style="text-align:left">${esc(t.symbol)}</td><td><span class="tag m-${t.lane}">${esc(MAT[t.lane]?.name||t.lane)}</span></td><td class="num">${px(t.entry)}</td><td class="num">${px(t.exit)}</td><td class="num ${cls(t.ret)}">${pct(t.ret)}</td><td class="num ${cls(t.roe)}">${pct(t.roe,1)}</td><td class="num">${pct(t.mae,1)}</td><td class="num">${pct(t.mfe,1)}</td><td class="mean">${esc(t.reason)}</td></tr>`).join("")
+   (rows.length? rows.map(t=>`<tr><td class="num" style="text-align:left">${kst(t.t_in)}</td><td class="num" style="text-align:left">${kst(t.t_out)}</td><td class="num" style="text-align:left">${esc(t.symbol)}${t.mode!=="live"?' <span class="tag tagdemo">데모</span>':""}</td><td><span class="tag m-${t.lane}">${esc(MAT[t.lane]?.name||t.lane)}</span></td><td class="num">${px(t.entry)}</td><td class="num">${px(t.exit)}</td><td class="num ${cls(t.ret)}">${pct(t.ret)}</td><td class="num ${cls(t.roe)}">${pct(t.roe,1)}</td><td class="num">${pct(t.mae,1)}</td><td class="num">${pct(t.mfe,1)}</td><td class="mean">${esc(t.reason)}</td></tr>`).join("")
     : `<tr><td colspan="11" class="mean">아직 청산된 거래 없음</td></tr>`);
 }
 function renderEScore(D){
-  const E = D.live; if(!E){ $("#escoreTable").innerHTML = "<tr><td class='mean'>엔진 기록 없음</td></tr>"; return; }
-  const S = E.score; $("#escoreSub").textContent = `엔진(${E.engine.mode||""}) 실제 체결 기준 · 수수료 반영 · n < 30이면 방향성 참고`;
+  const E = D.live; if(!E){ $("#escoreTable").innerHTML = "<tr><td class='mean'>엔진 기록 없음</td></tr>"; $("#dscoreTable").innerHTML=""; return; }
   const f = (x,k,d) => x && x.n ? (k==="win"? x[k]+"%" : k==="n"||k==="max_losing_streak" ? x[k] : pct(x[k],d)) : "—";
   const row = (name,x,b) => `<tr><td>${b?"<b>":""}${esc(name)}${b?"</b>":""}</td><td class="num">${f(x,"n")}</td><td class="num ${cls(x.mean)}">${f(x,"mean")}</td><td class="num">${f(x,"median")}</td><td class="num">${f(x,"win")}</td><td class="num">${f(x,"mae_med",1)}</td><td class="num">${f(x,"max_losing_streak")}</td><td class="num ${cls(x.acct)}">${f(x,"acct")}</td><td class="mean">${x.n? esc(x.label):"기록 없음"}</td></tr>`;
-  $("#escoreTable").innerHTML = `<tr><th>레인</th><th class="num">n</th><th class="num">평균</th><th class="num">중앙</th><th class="num">승률</th><th class="num">최저 중앙</th><th class="num">최대 연패</th><th class="num">계좌 영향</th><th>판정</th></tr>` +
-    Object.values(S.lanes).map(x=>row(x.name,x)).join("") + row("합계", S.total, true);
+  const head = `<tr><th>레인</th><th class="num">n</th><th class="num">평균</th><th class="num">중앙</th><th class="num">승률</th><th class="num">최저 중앙</th><th class="num">최대 연패</th><th class="num">계좌 영향</th><th>판정</th></tr>`;
+  const S = E.score||{total:{n:0},lanes:{}}, SD = E.score_demo||{total:{n:0},lanes:{}};
+  $("#escoreSub").textContent = "실제 돈 · 실제 체결 기준 · 수수료 반영 · n < 30이면 방향성 참고";
+  $("#escoreTable").innerHTML = S.total.n ? head + Object.values(S.lanes).map(x=>row(x.name,x)).join("") + row("합계", S.total, true)
+    : `<tr><td class="mean" style="padding:14px">실거래 기록 없음 — 엔진이 아직 데모(가짜 돈)로 돌고 있다.</td></tr>`;
+  $("#dscoreTable").innerHTML = head + Object.values(SD.lanes).map(x=>row(x.name,x)).join("") + row("합계", SD.total, true);
 }
 function renderLog(D){
   const rows = (D.signals||[]);
@@ -650,23 +669,42 @@ function renderBreadth(){
 
 /* ───── 선별 종목 차트 격자 ───── */
 const CH = {snap:null, tf:"15m", show:"all", cols:3, live:null, list:[], timer:null, drawn:false};
-const TF_SEC = {"5m":300,"15m":900,"1h":3600,"4h":14400};
-const KST = 9*3600;
-async function liveBars(sym, tf){
-  const r = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${tf}&limit=200`);
-  if(!r.ok) throw new Error(r.status);
-  return (await r.json()).map(k=>[k[0]/1000,+k[1],+k[2],+k[3],+k[4],+k[5]]);
+const TF_SEC = {"15m":900,"30m":1800,"1h":3600,"4h":14400,"1d":86400,"1w":604800};
+const TV_IV = {"15m":"15","30m":"30","1h":"60","4h":"240","1d":"D","1w":"W"};
+const BY_IV = {"15m":"15","30m":"30","1h":"60","4h":"240","1d":"D","1w":"W"};
+const TVS = [["tv_BTC","BINANCE:BTCUSDT.P"],["tv_USDTD","CRYPTOCAP:USDT.D"],["tv_USDCD","CRYPTOCAP:USDC.D"],["tv_BTCD","CRYPTOCAP:BTC.D"]];
+let TVLOAD = null;
+function tvLib(){ if(window.TradingView) return Promise.resolve(); if(TVLOAD) return TVLOAD;
+  TVLOAD = new Promise((ok,no)=>{ const sc=document.createElement("script"); sc.src="https://s3.tradingview.com/tv.js"; sc.onload=ok; sc.onerror=no; document.head.appendChild(sc); }); return TVLOAD; }
+async function renderTV(){
+  try{ await tvLib(); }catch(e){ $("#tvGrid").innerHTML = `<div class="mean">트레이딩뷰를 불러오지 못했다.</div>`; return; }
+  for(const [id,sym] of TVS){ const el=document.getElementById(id); if(!el) continue; el.innerHTML="";
+    new TradingView.widget({container_id:id, autosize:true, symbol:sym, interval:TV_IV[CH.tf]||"60", timezone:"Asia/Seoul", theme:"dark", style:"1", locale:"kr",
+      hide_side_toolbar:true, allow_symbol_change:false, hide_volume:true, withdateranges:false, save_image:false, backgroundColor:"#111111", gridColor:"#1b1b1b"}); }
 }
-function aggregate(bars, sec){
+const KST = 9*3600;
+async function liveBars(sym, tf, limit=200){
+  try{
+    const r = await fetch(`https://fapi.binance.com/fapi/v1/klines?symbol=${sym}&interval=${tf}&limit=${limit}`);
+    if(r.ok){ const j = await r.json(); if(j.length) return j.map(k=>[k[0]/1000,+k[1],+k[2],+k[3],+k[4],+k[5]]); }
+  }catch(e){}
+  // 바이낸스에 없는 종목(바이비트 전용) → 바이비트 선형
+  const r2 = await fetch(`https://api.bybit.com/v5/market/kline?category=linear&symbol=${sym}&interval=${BY_IV[tf]}&limit=${limit}`);
+  if(!r2.ok) throw new Error(r2.status);
+  const l = ((await r2.json()).result||{}).list||[];
+  if(!l.length) throw new Error("no bars");
+  return l.map(k=>[+k[0]/1000,+k[1],+k[2],+k[3],+k[4],+k[5]]).sort((a,b)=>a[0]-b[0]);
+}
+function aggregate(bars, sec, off=0){
   if(sec<=900) return bars;
   const out=[]; let cur=null;
-  for(const b of bars){ const t=Math.floor(b[0]/sec)*sec;
+  for(const b of bars){ const t=Math.floor((b[0]-off)/sec)*sec+off;
     if(!cur||cur[0]!==t){ if(cur) out.push(cur); cur=[t,b[1],b[2],b[3],b[4],b[5]]; }
     else { cur[2]=Math.max(cur[2],b[2]); cur[3]=Math.min(cur[3],b[3]); cur[4]=b[4]; cur[5]+=b[5]; } }
   if(cur) out.push(cur); return out;
 }
 const precOf = p => p>=1000?1 : p>=100?2 : p>=1?4 : p>=0.01?5 : 7;
-const LV = {entry:{c:"#e8e6e1",st:2}, sl:{c:"#e5534b",st:0}, tp:{c:"#2fbf71",st:0}, stop:{c:"#d9a43a",st:2}};
+const LV = {entry:{c:"#e8e6e1",st:2}, sl:{c:"#e5534b",st:0}, tp:{c:"#2fbf71",st:0}, stop:{c:"#d9a43a",st:2}, exit:{c:"#b48cf2",st:0}};
 
 function chartItems(){
   const it = (CH.snap?.items||[]);
@@ -675,7 +713,7 @@ function chartItems(){
 function cellHead(x){
   if(x.kind==="signal"){
     const st = x.status==="open" ? `진행 중 <span class="${cls(x.ret)}">${pct(x.ret)}</span>` : `${esc(x.reason||"")} <span class="${cls(x.ret)}">${pct(x.ret)}</span>`;
-    return `<span class="s">${esc(x.symbol)}</span><span class="tag m-${x.material}">${esc(MAT[x.material]?.name||x.material)}</span><span class="r">${st}</span>`;
+    return `<span class="s">${esc(x.symbol)}</span><span class="tag m-${x.material}">${esc(MAT[x.material]?.name||x.material)}</span>${x.demo?'<span class="tag tagdemo">데모</span>':""}${x.src==="bybit"?'<span class="tag">바이비트 봉</span>':""}<span class="r">${st}</span>`;
   }
   return `<span class="s">${esc(x.symbol)}</span><span class="tag">${esc(x.group)}${x.met!=null?` ${x.met}/${x.of}`:""}</span><span class="r mean">감시</span>`;
 }
@@ -698,7 +736,8 @@ function drawOne(el, x, bars){
     vs.setData(b.map(k=>({time:k[0]+KST, value:k[5], color:k[4]>=k[1]?"#2fbf7140":"#e5534b40"})));
   };
   set(bars);
-  const keep = (x.levels||[]).filter(l=>l.kind==="entry"||l.kind==="sl"||l.kind==="stop").map(l=>l.price);
+  const lo = Math.min(...bars.map(k=>k[3])), hi = Math.max(...bars.map(k=>k[2]));
+  const keep = (x.levels||[]).filter(l=>(l.kind==="entry"||l.kind==="sl"||l.kind==="stop") && l.price>=lo*0.7 && l.price<=hi*1.3).map(l=>l.price);
   if(keep.length) cs.applyOptions({autoscaleInfoProvider: orig => { const r = orig(); if(!r||!r.priceRange) return r;
     r.priceRange.minValue = Math.min(r.priceRange.minValue, ...keep); r.priceRange.maxValue = Math.max(r.priceRange.maxValue, ...keep); return r; }});
   const lines = [];
@@ -706,7 +745,7 @@ function drawOne(el, x, bars){
     lines.splice(0).forEach(l=>cs.removePriceLine(l));
     (x.levels||[]).forEach(l => { const m=LV[l.kind]||LV.entry; lines.push(cs.createPriceLine({price:l.price, color:m.c, lineWidth:1, lineStyle:m.st, axisLabelVisible:true, title:l.name})); });
     const b = curBars, tEnd = b.at(-1)?.[0]||0, day = b.filter(k=>k[0] >= tEnd-86400+1);
-    if(day.length){
+    if(day.length && (TF_SEC[CH.tf]||900)<86400){
       lines.push(cs.createPriceLine({price:Math.max(...day.map(k=>k[2])), color:"#7fb2f2", lineWidth:1, lineStyle:3, axisLabelVisible:true, title:"dmax"}));
       lines.push(cs.createPriceLine({price:Math.min(...day.map(k=>k[3])), color:"#7fb2f2", lineWidth:1, lineStyle:3, axisLabelVisible:true, title:"dmin"}));
     }
@@ -717,22 +756,28 @@ function drawOne(el, x, bars){
   chart.timeScale().fitContent();
   return {chart, update:b=>{ curBars=b; set(b); levels(); }};
 }
-async function fetchBars(x){
-  if(CH.live){ try { return await liveBars(x.symbol, CH.tf); } catch(e){ CH.live=false; } }
-  const tf = CH.tf==="5m" ? "15m" : CH.tf;
+function snapBars(x, tf){
+  if(tf==="1d") return x.dbars||[];
+  if(tf==="1w") return aggregate(x.dbars||[], 604800, 4*86400);  // 월요일 시작 주봉
   return aggregate(x.bars||[], TF_SEC[tf]);
+}
+async function fetchBars(x){
+  if(CH.live){ try { x.liveOk = true; return await liveBars(x.symbol, CH.tf); } catch(e){ x.liveOk = false; } }
+  return snapBars(x, CH.tf);
 }
 function liveLabel(){
   const el=$("#cLive");
   if(CH.live) el.innerHTML = `<span class="dot" style="background:var(--up)"></span><b>실시간</b> · 바이낸스 직접 · 1분마다 갱신`;
-  else el.innerHTML = `<span class="dot" style="background:var(--warn)"></span><b>스냅샷</b> · ${kst(CH.snap?.generated_at)} KST · 15분봉 2일치${CH.tf==="5m"?" (5m은 실시간에서만, 15m로 표시)":""}`;
+  else el.innerHTML = `<span class="dot" style="background:var(--warn)"></span><b>스냅샷</b> · ${kst(CH.snap?.generated_at)} KST · 15분봉 2일치 · 일봉 300일`;
 }
 async function renderCharts(){
+  const gen = CH.gen = (CH.gen||0)+1;
   CH.list.forEach(c=>c.chart.remove()); CH.list=[];
   if(CH.timer){ clearInterval(CH.timer); CH.timer=null; }
   const items = chartItems();
   if(!items.length){ $("#cWrap").innerHTML = `<div class="empty">표시할 종목 없음</div>`; liveLabel(); return; }
-  if(CH.live===null){ try{ await liveBars(items[0].symbol, "15m"); CH.live=true; }catch(e){ CH.live=false; } }
+  if(CH.live===null){ try{ await liveBars("BTCUSDT", "15m", 2); CH.live=true; }catch(e){ CH.live=false; } }
+  if(gen!==CH.gen) return;
   const groups = [["signal","신호 종목 (진행 중 · 최근 48시간 청산)"],["watch","감시 종목 (조건 근접, 진입 근거 아님)"]];
   let html = "";
   for(const [k,t] of groups){ const g = items.filter(x=>x.kind===k); if(!g.length) continue;
@@ -740,23 +785,25 @@ async function renderCharts(){
       g.map(x=>`<div class="cell"><div class="hd">${cellHead(x)}</div><div class="cv" data-s="${esc(x.symbol)}"><div class="wm">${esc(x.symbol.replace("USDT",""))}</div></div></div>`).join("")}</div>`; }
   $("#cWrap").innerHTML = html;
   for(const x of items){
-    const el = document.querySelector(`.cv[data-s="${x.symbol}"]`); if(!el) continue;
+    const el = document.querySelector(`#cWrap .cv[data-s="${x.symbol}"]`); if(!el) continue;
     const bars = await fetchBars(x);
+    if(gen!==CH.gen) return;   // 더 새 그리기가 시작됨
     if(!bars.length){ el.insertAdjacentHTML("beforeend",`<div class="mean" style="padding:20px">봉 없음</div>`); continue; }
     CH.list.push({...drawOne(el, x, bars), x});
   }
   liveLabel();
-  if(CH.live) CH.timer = setInterval(async()=>{ for(const c of CH.list){ try{ c.update(await liveBars(c.x.symbol, CH.tf)); }catch(e){} } }, 60000);
+  if(CH.live) CH.timer = setInterval(async()=>{ for(const c of CH.list){ if(c.x.liveOk===false) continue; try{ c.update(await liveBars(c.x.symbol, CH.tf)); }catch(e){} } }, 60000);
 }
 const segBind = (id,key,cast=v=>v) => $(id).onclick = e => { const v=e.target.dataset?.v; if(v==null) return;
   CH[key]=cast(v); document.querySelectorAll(id+" button").forEach(b=>b.classList.toggle("on",b===e.target)); renderCharts(); };
 segBind("#cShow","show"); segBind("#cTf","tf"); segBind("#cCols","cols",Number);
+$("#cTf").addEventListener("click", e=>{ if(e.target.dataset?.v) renderTV(); });
 if (window.matchMedia("(max-width:760px)").matches){ CH.cols=1; document.querySelectorAll("#cCols button").forEach(b=>b.classList.toggle("on",b.dataset.v==="1")); }
 
 /* ───── 온체인 카드 ───── */
 let OC = {data:null, charts:[], drawn:false};
 const nfmt = x => x==null ? "—" : Math.abs(x)>=1e9 ? (x/1e9).toFixed(2)+"B" : Math.abs(x)>=1e6 ? (x/1e6).toFixed(1)+"M" : Math.abs(x)>=1e3 ? (x/1e3).toFixed(1)+"K" : Math.round(x).toLocaleString();
-const usd = x => x==null ? "—" : "$"+nfmt(x);
+const usd = x => x==null ? "—" : (x<0?"-$"+nfmt(-x):"$"+nfmt(x));
 const shortA = a => a ? a.slice(0,6)+"…"+a.slice(-4) : "";
 const scan = (chain,a) => (chain.includes("BNB")?"https://bscscan.com/address/":"https://etherscan.io/address/")+a;
 function ocCard(c){
@@ -812,18 +859,48 @@ function renderBSC(){
   $("#ocTitle").style.display="";
   const st = B.status||{};
   const top = (B.rank||[]).filter(r=>r.net7>0).slice(0,10), bot = (B.rank||[]).filter(r=>r.net7<0).sort((a,b)=>a.net7-b.net7).slice(0,10);
-  const rk = (t,arr,c) => `<div><h3 style="margin:0 0 6px;font-size:15px">${t}</h3><table><tr><th>종목</th><th class="num">7일 순출금</th><th class="num">출금</th><th class="num">입금</th></tr>${
-    arr.length? arr.map(r=>`<tr class="bscrow" data-b="${esc(r.base)}" style="cursor:pointer"><td class="num" style="text-align:left">${esc(r.base)}</td><td class="num" style="color:${c}">${usd(r.net7)}</td><td class="num">${usd(r.wd7)}</td><td class="num">${usd(r.dep7)}</td></tr>`).join("") : '<tr><td colspan="4" class="mean">없음</td></tr>'}</table></div>`;
+  const rk = (t,arr,c) => `<div><h3 style="margin:0 0 6px;font-size:15px">${t}</h3><table><tr><th>종목</th><th class="num">7일 순출금</th><th class="num">출금</th><th class="num">입금</th><th></th></tr>${
+    arr.length? arr.map(r=>`<tr><td class="num" style="text-align:left">${esc(r.base)}</td><td class="num" style="color:${c}">${usd(r.net7)}</td><td class="num">${usd(r.wd7)}</td><td class="num">${usd(r.dep7)}</td><td><button class="bbtn" data-b="${esc(r.base)}">입출금 차트</button></td></tr>`).join("") : '<tr><td colspan="5" class="mean">없음</td></tr>'}</table></div>`;
   const al = (B.alerts||[]).slice(0,15).map(a=>`<tr><td class="num" style="text-align:left">${kst(a.t)}</td><td class="num" style="text-align:left">${esc(a.base)}</td><td style="color:${a.kind==="매집"?"#3fa7c4":a.kind==="분배"?"#ef6a5e":"#f2c14e"}">${esc(a.kind)}</td><td class="num">${usd(a.usd)}</td><td class="mean">${esc(a.note)}</td></tr>`).join("");
   const ev = (B.events||[]).slice(0,40).map(e=>`<tr><td class="num" style="text-align:left">${kst(e.t)}</td><td class="num" style="text-align:left">${esc(e.base)}</td><td>${esc(e.kind)}</td><td class="num">${usd(e.usd)}</td><td class="mean">${esc(e.from_label||e.from)} → ${esc(e.to_label||e.to)}</td><td>${e.tx?`<a href="https://bscscan.com/tx/${esc(e.tx)}" target="_blank" rel="noopener">tx</a>`:""}</td></tr>`).join("");
   el.innerHTML = `<h2>BSC 거래소 흐름 <span class="sub">알파 BSC 선물 종목 · 5분마다 수집 · 매시 갱신 · 감시기 ${st.ok?'<span class="pos">정상</span>':'<span class="neg">확인 필요</span>'} ${esc(st.t||"")}</span></h2>
     <div class="card"><div class="cols">${rk("거래소에서 빠져나감 (순출금) 상위", top, "#3fa7c4")}${rk("거래소로 들어감 (순입금) 상위", bot, "#ef6a5e")}</div>
-      <div id="bscChart" style="margin-top:12px"><div class="mean">종목을 누르면 최근 14일 일별 출금·입금 막대가 나온다.</div></div></div>
+      <div class="mean" style="margin-top:8px">'입출금 차트'를 누르면 최근 7일 가격 위에 거래소 출금 ▲ · 입금 ▼ 이 찍힌 창이 열린다.</div></div>
     <h2>지갑 이동 알림 <span class="sub">검증 안 된 알림 · 정보용</span></h2>
     <div class="card" style="overflow-x:auto"><table><tr><th>시각 (KST)</th><th>종목</th><th>종류</th><th class="num">금액</th><th>설명</th></tr>${al||'<tr><td colspan="5" class="mean">최근 알림 없음</td></tr>'}</table></div>
     <h2>큰 이체 <span class="sub">최근 7일 · ${usd(B.min_usd)} 이상 · 주소는 앞뒤만</span></h2>
     <div class="card" style="overflow-x:auto"><table><tr><th>시각 (KST)</th><th>종목</th><th>종류</th><th class="num">금액</th><th>보낸 곳 → 받은 곳</th><th></th></tr>${ev||'<tr><td colspan="6" class="mean">없음</td></tr>'}</table></div>`;
-  el.querySelectorAll(".bscrow").forEach(r=>r.onclick=()=>{ const b=r.dataset.b; $("#bscChart").innerHTML = `<div class="mean" style="margin-bottom:4px"><b>${esc(b)}</b> 최근 14일 · 파랑 = 거래소 출금, 빨강 = 거래소 입금</div>` + bscBars((B.flows||{})[b]); });
+  el.querySelectorAll(".bbtn").forEach(r=>r.onclick=()=>openFlow(r.dataset.b));
+}
+let FLOWCH = null;
+async function openFlow(base){
+  const B = OC.bsc||{}, tx = (B.tx7||{})[base]||[];
+  $("#fTitle").textContent = `${base} · 최근 7일 거래소 입출금`;
+  $("#fBars").innerHTML = `<div class="mean" style="margin:6px 0 2px">최근 14일 일별 · 파랑 = 거래소 출금, 빨강 = 거래소 입금</div>` + bscBars((B.flows||{})[base]);
+  $("#fTip").innerHTML = `<span class="mean">마커에 마우스를 올리면 시각·금액·상대가 보인다. ▲ 출금(거래소에서 빠져나감) · ▼ 입금(거래소로 들어감)</span>`;
+  $("#fModal").hidden = false;
+  if(FLOWCH){ FLOWCH.remove(); FLOWCH=null; }
+  const el = $("#fChart"); el.innerHTML = "";
+  if(!window.LightweightCharts){ el.innerHTML = '<div class="mean" style="padding:20px">차트 라이브러리 없음</div>'; return; }
+  let bars = [], sym = base+"USDT";
+  for(const s of [base+"USDT", "1000"+base+"USDT"]){ try{ bars = await liveBars(s, "1h", 170); sym = s; break; }catch(e){} }
+  if(!bars.length){ el.innerHTML = '<div class="mean" style="padding:20px">가격 봉을 불러오지 못했다(선물 종목 이름이 다르거나 연결 막힘).</div>'; return; }
+  const ch = LightweightCharts.createChart(el, {autoSize:true, layout:{background:{type:"solid",color:"#111"}, textColor:"#8a877f", fontSize:11},
+    grid:{vertLines:{color:"#1b1b1b"}, horzLines:{color:"#1b1b1b"}}, timeScale:{timeVisible:true, borderColor:"#262626"}, rightPriceScale:{borderColor:"#262626"}, crosshair:{mode:0}});
+  FLOWCH = ch;
+  const pr = precOf(bars.at(-1)[4]);
+  const cs = ch.addCandlestickSeries({upColor:"#2fbf71", downColor:"#e5534b", borderVisible:false, wickUpColor:"#2fbf71", wickDownColor:"#e5534b", priceFormat:{type:"price",precision:pr,minMove:Math.pow(10,-pr)}});
+  cs.setData(bars.map(k=>({time:k[0]+KST, open:k[1], high:k[2], low:k[3], close:k[4]})));
+  const mx = Math.max(1, ...tx.map(x=>x.usd)), t0 = bars[0][0];
+  const byT = new Map();
+  const mk = tx.filter(x=>x.t>=t0).map(x=>{ const t=x.t+KST; (byT.get(t)||byT.set(t,[]).get(t)).push(x);
+    return {time:t, position:x.dir==="wd"?"belowBar":"aboveBar", shape:x.dir==="wd"?"arrowUp":"arrowDown", color:x.dir==="wd"?"#3fa7c4":"#ef6a5e",
+            size: 0.6 + 2.4*Math.sqrt(x.usd/mx), text: x.usd>=mx*0.25? usd(x.usd):""}; }).sort((a,b)=>a.time-b.time);
+  cs.setMarkers(mk);
+  ch.timeScale().fitContent();
+  ch.subscribeCrosshairMove(p=>{ if(!p||!p.time) return; const L = byT.get(p.time); if(!L) return;
+    $("#fTip").innerHTML = L.map(x=>`<b style="color:${x.dir==="wd"?"#3fa7c4":"#ef6a5e"}">${x.dir==="wd"?"▲ 거래소 출금":"▼ 거래소 입금"}</b> ${kst(new Date(x.t*1000).toISOString())} KST · ${usd(x.usd)} · ${x.n}건${x.lab?` · ${esc(x.lab)}`:""}`).join("<br>"); });
+  if(!mk.length) $("#fTip").innerHTML = '<span class="mean">최근 7일 이 종목의 거래소 입출금 기록이 없다($1만 이상 분류 이체 기준).</span>';
 }
 function renderOnchain(){
   OC.charts.forEach(c=>c.remove()); OC.charts=[];
@@ -906,6 +983,8 @@ async function openInfo(sym, image){
 }
 $("#iGrid").onclick = e => { const c=e.target.closest(".icard"); if(c) openInfo(c.dataset.s, c.dataset.img); };
 $("#iClose").onclick = () => $("#iModal").hidden = true;
+$("#fClose").onclick = () => { $("#fModal").hidden = true; if(FLOWCH){ FLOWCH.remove(); FLOWCH=null; } };
+$("#fModal").onclick = e => { if(e.target.id==="fModal") $("#fClose").click(); };
 $("#iModal").onclick = e => { if(e.target.id==="iModal") $("#iModal").hidden = true; };
 document.addEventListener("keydown", e => { if(e.key==="Escape") $("#iModal").hidden = true; });
 $("#iKind").onclick = e => { const v=e.target.dataset?.v; if(!v) return; INFO.kind=v; document.querySelectorAll("#iKind button").forEach(b=>b.classList.toggle("on",b===e.target)); renderInfo(); };
@@ -930,29 +1009,37 @@ const tv = s => `<a class="tvl" href="https://www.tradingview.com/chart/?symbol=
 const dots = (m,o) => `<span class="dots">${"<span class='y'>●</span>".repeat(m)}${"<span class='n'>●</span>".repeat(Math.max(0,o-m))}</span>`;
 const mvTxt = r => r.new ? `<span class="mv up">신규</span>` : r.move>0 ? `<span class="mv up">↑${r.move}</span>` : r.move<0 ? `<span class="mv dn">↓${-r.move}</span>` : `<span class="mv">–</span>`;
 const usdM = v => v==null ? "—" : "$"+(v/1e6).toFixed(1)+"M";
+function rankTable(rows, cols){
+  return `<div class="card" style="overflow-x:auto"><table class="rtbl"><tr>${cols.map(c=>`<th${c.n?' class="num"':""}>${c.h}</th>`).join("")}</tr>${
+    rows.length? rows.map(r=>`<tr${r.excluded?' style="opacity:.55"':""}>${cols.map(c=>c.f(r)).join("")}</tr>`).join("") : `<tr><td colspan="${cols.length}" class="mean">해당 종목 없음</td></tr>`}</table></div>`;
+}
 function renderRank(){
-  const R = RK.data;
-  if(!R){ $("#rBody").innerHTML = `<div class="empty">순위 데이터 없음</div>`; return; }
-  $("#rStamp").innerHTML = `<span class="dot" style="background:var(--up)"></span>${kst(R.generated_at)} KST · 유동 종목 ${R.scanned||"—"}개 검사`;
+  const R = RK.data, E = (window.__LIVE__||{});
+  if(!R && !E.models){ $("#rBody").innerHTML = `<div class="empty">순위 데이터 없음</div>`; return; }
+  if(R) $("#rStamp").innerHTML = `<span class="dot" style="background:var(--up)"></span>${kst(R.generated_at)} KST · 유동 종목 ${R.scanned||"—"}개 검사`;
+  const TOP = 10;
+  const symC = {h:"종목", f:r=>`<td class="num" style="text-align:left">${esc(r.symbol)} ${tv(r.symbol)}</td>`};
   if(RK.view==="lane"){
-    const nx = (R.nx||[]).map(r=>`<tr${r.excluded?' style="opacity:.55"':""}><td class="num">${r.rank}</td><td>${mvTxt(r)}</td><td class="num" style="text-align:left">${esc(r.symbol)} ${tv(r.symbol)}</td>
-      <td>${dots(r.met,r.of)}</td><td class="num ${cls(r.r24)}">${pct((r.r24||0)*100,1)}</td><td class="num">${usdM(r.q24)}</td><td>${r.excluded? '<span class="tag warn">제외</span>':""}</td></tr>`).join("");
-    const cb = (R.cb||[]).map(r=>`<tr><td class="num">${r.rank}</td><td>${mvTxt(r)}</td><td class="num" style="text-align:left">${esc(r.symbol)} ${tv(r.symbol)}</td>
-      <td>${dots(r.met,r.of)}</td><td class="num ${cls(r.r24)}">${pct((r.r24||0)*100,1)}</td><td class="num">${usdM(r.q24)}</td></tr>`).join("");
-    $("#rBody").innerHTML = `<h2>${esc(R.lane_now)} 근접 TOP ${(R.nx||[]).length}</h2>
-      <div class="rhead">조건을 많이 채우고 남은 거리가 짧은 순.</div>
-      <div class="card" style="overflow-x:auto"><table class="rtbl"><tr><th class="num">#</th><th></th><th>종목</th><th>충족</th><th class="num">24h</th><th class="num">거래대금</th><th></th></tr>${nx||'<tr><td colspan="7" class="mean">없음</td></tr>'}</table></div>
-      <h2>CB 근접</h2>
-      <div class="card" style="overflow-x:auto"><table class="rtbl"><tr><th class="num">#</th><th></th><th>종목</th><th>충족</th><th class="num">24h</th><th class="num">거래대금</th></tr>${cb||'<tr><td colspan="6" class="mean">해당 종목 없음</td></tr>'}</table></div>`;
+    const base = [{h:"#",n:1,f:r=>`<td class="num">${r.rank}</td>`},{h:"",f:r=>`<td>${mvTxt(r)}</td>`}, symC,{h:"충족",f:r=>`<td>${dots(r.met,r.of)}</td>`},
+      {h:"24h",n:1,f:r=>`<td class="num ${cls(r.r24)}">${pct((r.r24||0)*100,1)}</td>`},{h:"거래대금",n:1,f:r=>`<td class="num">${usdM(r.q24)}</td>`}];
+    const nx = (R?.nx||[]).slice(0,TOP), cb = (R?.cb||[]).slice(0,TOP);
+    const hs = ((E.hs&&!E.hs.stale)? E.hs.near: [])||[];
+    $("#rBody").innerHTML =
+      `<h2>${esc(R?.lane_now||"NX")} 근접 TOP ${nx.length}</h2><div class="rhead">조건을 많이 채우고 남은 거리가 짧은 순.</div>` +
+      rankTable(nx, base.concat([{h:"",f:r=>`<td>${r.excluded? '<span class="tag warn">제외</span>':""}</td>`}])) +
+      `<h2>CB · 반등 근접 TOP ${cb.length}</h2>` + rankTable(cb, base) +
+      `<h2>HS · 선별 근접 <span class="sub">${E.hs? kst(E.hs.date)+" KST 마감분 · 매일 09:00":""} · 조건 하나 모자람 · 진입 안 함</span></h2>` +
+      rankTable(hs.slice(0,TOP).map((r,i)=>({...r, rank:i+1})), [{h:"#",n:1,f:r=>`<td class="num">${r.rank}</td>`}, symC]);
   } else {
-    const M = R.model;
-    if(!M){ $("#rBody").innerHTML = `<div class="empty">엔진 점수를 아직 받지 못했다. v36_board 에서 매시 site_hook.emit_ranks() 를 부르면 여기에 g7 · AX1 · TOP20 순위가 뜬다.</div>`; return; }
-    const lane = new Set((R.nx||[]).filter(r=>r.met>=2).map(r=>r.symbol).concat((R.cb||[]).filter(r=>r.met>=3).map(r=>r.symbol)));
-    const keys = ["g7","ax1","p_top"].concat(Object.keys(M.sources||{}).filter(k=>!MODEL_INFO[k]));
-    $("#rBody").innerHTML = (M.stale? `<p class="err">엔진 점수 파일이 6시간 넘게 갱신되지 않았다(${kst(M.ts)} KST).</p>`:`<div class="rhead">엔진 계산 시각 ${kst(M.ts)} KST. <span class="both">레인 근접</span> = 레인 근접 순위에서도 2개 이상 조건을 채운 종목.</div>`) +
-      `<div class="mgrid">${keys.map(k=>{ const rows = M.sources?.[k]; const inf = MODEL_INFO[k]||{t:k,d:""};
-        return `<div class="card mcard"><h3>${esc(inf.t)}</h3><div class="d">${esc(inf.d)}</div>${rows&&rows.length? `<table><tr><th class="num">#</th><th>종목</th><th class="num">점수</th><th class="num">백분위</th></tr>${
-          rows.slice(0,20).map((r,i)=>`<tr><td class="num">${i+1}</td><td class="num" style="text-align:left">${esc(r.symbol)}${lane.has(r.symbol)?'<span class="both">레인 근접</span>':""}</td><td class="num">${Number(r.score).toFixed(3)}</td><td class="num">${r.pct==null?"—":r.pct.toFixed(1)}</td></tr>`).join("")}</table>` : `<div class="mean">엔진에서 아직 안 보냄</div>`}</div>`}).join("")}</div>`;
+    const M = E.models||{};
+    const g = M.G, t = M.T20S;
+    const box = (title, d, sub, rows, cols) => `<div class="card mcard"><h3>${title}</h3><div class="d">${sub}</div>${rows&&rows.length? rankTable(rows, cols).replace('<div class="card" style="overflow-x:auto">','<div>') : '<div class="mean">아직 기록 없음</div>'}</div>`;
+    $("#rBody").innerHTML = `<div class="mgrid">` +
+      box("G", "", g? `${kst(g.ts)} KST 기준 · 매시 계산 · ${g.n}종목 중`: "엔진 기록 없음",
+        (g?.rows||[]).slice(0,TOP).map((r,i)=>({...r, rank:i+1})), [{h:"#",n:1,f:r=>`<td class="num">${r.rank}</td>`}, symC, {h:"최근 30일 점수 중 상위",n:1,f:r=>`<td class="num">${r.top_pct!=null? r.top_pct.toFixed(1)+"%":"—"}</td>`}]) +
+      box("T20S+", "", t? `${kst(t.ts)} KST 회차 · 4시간마다${t.stale?' · <span class="neg">12시간 넘게 갱신 없음</span>':""}`: "엔진 기록 없음",
+        (t?.rows||[]).slice(0,TOP), [{h:"#",n:1,f:r=>`<td class="num">${r.rk}</td>`}, symC]) +
+      `</div><p class="note">모델 점수 순위는 엔진이 매시(G)·4시간마다(T20S+) 계산한 결과를 그대로 줄 세운 것이다. 순위가 높아도 진입 조건을 다 채운 것은 아니다.</p>`;
   }
 }
 $("#rView").onclick = e => { const v=e.target.dataset?.v; if(!v) return; RK.view=v; document.querySelectorAll("#rView button").forEach(b=>b.classList.toggle("on",b===e.target)); renderRank(); };
@@ -960,7 +1047,7 @@ $("#rView").onclick = e => { const v=e.target.dataset?.v; if(!v) return; RK.view
 function showTab(t){
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
   document.querySelectorAll("section").forEach(s=>s.classList.toggle("on", s.id===t));
-  if(t==="charts" && !CH.drawn && window.LightweightCharts){ CH.drawn=true; renderCharts(); }
+  if(t==="charts" && !CH.drawn && window.LightweightCharts){ CH.drawn=true; renderCharts(); renderTV(); }
   if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); }
   if(t==="members"){ MV.armed = null; renderMembers(); }
 }
@@ -972,7 +1059,7 @@ async function boot(){
   const D = await load();
   if (window.__DATA__ && window.__DATA__.demo) $("#demo").style.display="block";
   $("#stamp").innerHTML = D.latest ? `마지막 갱신 ${kst(D.latest.generated_at)} KST<br>다음 갱신 매시 5분` : "데이터를 불러오지 못했습니다";
-  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; RK.data = D.ranks; renderRank();
+  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; window.__LIVE__ = D.live||{}; RK.data = D.ranks; renderRank();
   if (OC.drawn){ renderBSC(); renderOnchain(); }
   if (CH.drawn) renderCharts();
   renderNow(D); drawCardCharts(); loadInfo(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); renderBreadth();
