@@ -121,9 +121,9 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 .icard .m .t{margin-left:auto;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
 .icard .m .rs{font-size:13px;color:#d4d1c9;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tag.k-entry{border-color:#2fbf7166;color:#5fd897}.tag.k-onchain{border-color:#3fa7c466;color:#6cc3dc}.tag.k-move{border-color:#d9a43a66;color:var(--warn)}
-.tvgrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
-.tvgrid .tvc{height:260px;background:#111;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-@media(max-width:900px){.tvgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.tvgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:12px}
+.tvgrid .tvc{height:400px;background:#111;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+@media(max-width:760px){.tvgrid{grid-template-columns:1fr}.tvgrid .tvc{height:320px}}
 .tagdemo{background:#3a2f12;color:#f2c14e;border:1px solid #6b5520}
 .bbtn{background:none;border:1px solid var(--line);color:var(--text);border-radius:6px;padding:1px 8px;cursor:pointer;font:inherit;font-size:12px}
 .bbtn:hover{border-color:#3fa7c4;color:#3fa7c4}
@@ -239,7 +239,7 @@ svg text{font-family:'Noto Sans KR',sans-serif}
     <span class="live" id="cLive"></span>
   </div>
   <div class="cgroup">고정 차트 · 트레이딩뷰</div>
-  <div class="tvgrid" id="tvGrid"><div class="tvc" id="tv_BTC"></div><div class="tvc" id="tv_USDTD"></div><div class="tvc" id="tv_USDCD"></div><div class="tvc" id="tv_BTCD"></div></div>
+  <div class="tvgrid" id="tvGrid"><div class="tvc" id="tv_BTC"></div><div class="tvc" id="tv_BTCD"></div><div class="tvc" id="tv_USDTD"></div><div class="tvc" id="tv_USDCD"></div></div>
   <div id="cWrap"></div>
   <p class="note">선: <span style="color:#e8e6e1">진입</span> · <span style="color:var(--down)">손절</span> · <span style="color:var(--up)">익절</span> · <span style="color:var(--warn)">현재 손절선</span> · <span style="color:#7fb2f2">dmax / dmin = 최근 24시간 고가·저가</span>. 신호 종목은 진입 시점에 ▲ 표시. 바이낸스에 직접 붙으면 1분마다 갱신, 막혀 있으면 매시 스냅샷(15분봉 2일치)을 보여준다. 감시 종목 차트는 진입 근거가 아니다.</p>
 </section>
@@ -672,7 +672,7 @@ const CH = {snap:null, tf:"15m", show:"all", cols:3, live:null, list:[], timer:n
 const TF_SEC = {"15m":900,"30m":1800,"1h":3600,"4h":14400,"1d":86400,"1w":604800};
 const TV_IV = {"15m":"15","30m":"30","1h":"60","4h":"240","1d":"D","1w":"W"};
 const BY_IV = {"15m":"15","30m":"30","1h":"60","4h":"240","1d":"D","1w":"W"};
-const TVS = [["tv_BTC","BINANCE:BTCUSDT.P"],["tv_USDTD","CRYPTOCAP:USDT.D"],["tv_USDCD","CRYPTOCAP:USDC.D"],["tv_BTCD","CRYPTOCAP:BTC.D"]];
+const TVS = [["tv_BTC","BINANCE:BTCUSDT.P"],["tv_BTCD","CRYPTOCAP:BTC.D"],["tv_USDTD","CRYPTOCAP:USDT.D"],["tv_USDCD","CRYPTOCAP:USDC.D"]];
 let TVLOAD = null;
 function tvLib(){ if(window.TradingView) return Promise.resolve(); if(TVLOAD) return TVLOAD;
   TVLOAD = new Promise((ok,no)=>{ const sc=document.createElement("script"); sc.src="https://s3.tradingview.com/tv.js"; sc.onload=ok; sc.onerror=no; document.head.appendChild(sc); }); return TVLOAD; }
