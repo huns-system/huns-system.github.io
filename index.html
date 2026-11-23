@@ -217,7 +217,7 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 </section>
 <div id="gate" hidden><div class="gbox" id="gbox"></div></div>
 <div id="fModal" class="imodal" hidden><div class="ibox" style="width:min(900px,100%)"><div class="ihead"><span id="fTitle"></span><button id="fClose" aria-label="닫기">✕</button></div>
-  <div style="padding:10px 14px;overflow:auto"><div id="fChart" style="height:340px"></div><div id="fTip" style="min-height:40px;margin-top:8px;font-size:13px"></div><div id="fBars"></div>
+  <div style="padding:10px 14px;overflow:auto"><div id="fChart" style="height:420px"></div><div id="fTip" style="min-height:40px;margin-top:8px;font-size:13px"></div><div id="fBars"></div>
   <p class="note">BSC 체인 거래소 지갑 기준(60 감시기, 라벨 있는 거래소·감시·배정·MM 지갑의 $1만 이상 이체를 1시간 단위로 묶음). 검증 안 된 정보 — 진입 근거 아님.</p></div></div></div>
 <div id="iModal" class="imodal" hidden><div class="ibox"><div class="ihead"><span id="iTitle"></span><button id="iClose" aria-label="닫기">✕</button></div>
   <div class="ibody"><div class="iimg"><img id="iImg" alt="종합 정보 차트"></div><div class="iside"><div id="iMeta"></div><div id="iHist" class="ihist"></div></div></div></div></div>
@@ -874,9 +874,18 @@ function renderBSC(){
 }
 let FLOWCH = null;
 async function openFlow(base){
-  const B = OC.bsc||{}, tx = (B.tx7||{})[base]||[];
+  const B = OC.bsc||{};
+  let tx = (B.tx7||{})[base];
+  if(!tx){ // 예전 데이터(tx7 없음): 큰 이체 목록으로 대신
+    const WDK = ["거래소 출금","거래소 → 감시 지갑","거래소 → MM"], DPK = ["거래소 입금","감시 지갑 → 거래소","배정 지갑 → 거래소","MM → 거래소"];
+    const m = new Map();
+    (B.events||[]).filter(e=>e.base===base && (WDK.includes(e.kind)||DPK.includes(e.kind))).forEach(e=>{
+      const h = Math.floor(Date.parse(e.t)/3600000)*3600, d = WDK.includes(e.kind)?"wd":"dep", k=h+d;
+      const x = m.get(k)||{t:h,dir:d,usd:0,n:0,lab:""}; x.usd+=e.usd; x.n++; x.lab = x.lab || (d==="wd"? e.from_label : e.to_label) || ""; m.set(k,x); });
+    tx = [...m.values()].sort((a,b)=>a.t-b.t);
+  }
   $("#fTitle").textContent = `${base} · 최근 7일 거래소 입출금`;
-  $("#fBars").innerHTML = `<div class="mean" style="margin:6px 0 2px">최근 14일 일별 · 파랑 = 거래소 출금, 빨강 = 거래소 입금</div>` + bscBars((B.flows||{})[base]);
+  $("#fBars").innerHTML = "";
   $("#fTip").innerHTML = `<span class="mean">마커에 마우스를 올리면 시각·금액·상대가 보인다. ▲ 출금(거래소에서 빠져나감) · ▼ 입금(거래소로 들어감)</span>`;
   $("#fModal").hidden = false;
   if(FLOWCH){ FLOWCH.remove(); FLOWCH=null; }
