@@ -213,19 +213,19 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 </header>
 <div class="demo" id="demo" style="display:none">샘플 데이터로 그린 미리보기입니다. 종목·신호·비율 모두 가짜 값이며 실제 시장과 무관합니다.</div>
 <nav id="nav">
-  <button data-t="now" class="on">지금</button>
+  <button data-t="now" class="on adm" hidden>지금</button>
   <button data-t="events">이벤트</button>
   <button data-t="info">종합 차트</button>
   <button data-t="rank">후보 순위</button>
   <button data-t="charts">차트</button>
   <button data-t="onchain">온체인</button>
   <button data-t="breadth">시장 폭 차트</button>
-  <button data-t="log">신호 기록</button>
-  <button data-t="score">성적판</button>
+  <button data-t="log" class="adm" hidden>신호 기록</button>
+  <button data-t="score" class="adm" hidden>성적판</button>
   <button data-t="members" id="tabMembers" hidden>회원 관리</button>
 </nav>
 
-<section id="now" class="on">
+<section id="now">
   <div class="grid" id="kpis"></div>
   <div class="brief"><h3 id="briefTitle">이번 시간 브리핑</h3><div id="brief"></div></div>
   <div id="evNow"></div>
@@ -246,7 +246,7 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 
 <section id="info">
   <div class="ctool">
-    <div class="seg" id="iKind"><span class="lb">종류</span><button data-v="all" class="on">전체</button><button data-v="entry">진입</button><button data-v="onchain">고래 이동</button><button data-v="move">급변</button></div>
+    <div class="seg" id="iKind"><span class="lb">종류</span><button data-v="all" class="on">전체</button><button data-v="entry">관찰</button><button data-v="onchain">고래 이동</button><button data-v="move">급변</button></div>
     <input id="iSearch" placeholder="종목 검색 (예: LAB)" style="background:var(--panel);border:1px solid var(--line);border-radius:7px;color:var(--text);padding:5px 10px;font:inherit;font-size:13px;width:180px">
     <span class="live" id="iStamp"></span>
   </div>
@@ -450,10 +450,10 @@ function expired(st){
 async function start(force){
   if (STARTED && !force) return;
   STARTED = true;
-  if (window.__DATA__ && !window.__SB_FAKE__){ $("#gate").hidden = true; return boot(); }
+  if (window.__DATA__ && !window.__SB_FAKE__){ $("#gate").hidden = true; setAdmin(true); return boot(); }
   if (!sbClient()) return gate("setup");
   const {data:{session}} = await SB.auth.getSession();
-  if (!session){ ME = null; PROF = null; $("#who").innerHTML = ""; $("#tabMembers").hidden = true; return gate("login"); }
+  if (!session){ ME = null; PROF = null; $("#who").innerHTML = ""; $("#tabMembers").hidden = true; setAdmin(false); return gate("login"); }
   ME = session.user;
   let st = null;
   try { st = await myStatus(); } catch(e){ return gate("login", {err:1, t:"상태 확인 실패: " + (e.message||e)}); }
@@ -467,6 +467,7 @@ async function start(force){
   $("#chpw").onclick = () => gate("newpw");
   $("#logout").onclick = async () => { await SB.auth.signOut(); location.hash=""; start(true); };
   $("#tabMembers").hidden = !st.is_admin;
+  setAdmin(!!st.is_admin);
   SB.rpc("record_visit").then(()=>{}, ()=>{});
   await boot();
   if (!TIMER) TIMER = setInterval(tick, 5*60*1000);
@@ -1009,7 +1010,7 @@ async function signUrls(paths){
     (data||[]).forEach(d => { if (d.signedUrl) INFO.urls[d.path] = d.signedUrl; });
   }
 }
-const KIND = {entry:"진입", onchain:"고래 이동", move:"급변", other:"기타"};
+const KIND = {entry:"관찰", onchain:"고래 이동", move:"급변", other:"기타"};
 async function infoGet(path){
   if (window.__DATA__?.info && !SB) return path==="index.json" ? window.__DATA__.info.index : window.__DATA__.info.symbols[path.replace("charts/","").replace(".json","")];
   try{ const m = await sbFiles(["info/" + path]); return m["info/" + path] || null; }catch(e){ return null; }
@@ -1183,7 +1184,16 @@ function evChart(c){
   ch.timeScale().fitContent();
 }
 
+/* 관리자 전용 탭: 지금 · 신호 기록 · 성적판 (+ 회원 관리) */
+let IS_ADMIN = false;
+const ADMIN_TABS = new Set(["now","log","score","members"]);
+const firstTab = () => IS_ADMIN ? "now" : "info";
+function setAdmin(on){
+  IS_ADMIN = on;
+  document.querySelectorAll("nav button.adm").forEach(b=>b.hidden=!on);
+}
 function showTab(t){
+  if (ADMIN_TABS.has(t) && !IS_ADMIN) t = firstTab();
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
   document.querySelectorAll("section").forEach(s=>s.classList.toggle("on", s.id===t));
   if(t==="charts" && !CH.drawn && window.LightweightCharts){ CH.drawn=true; renderCharts(); renderTV(); }
@@ -1207,7 +1217,7 @@ async function boot(){
   if (CH.drawn) renderCharts();
   if ($("#events").classList.contains("on")) renderEvents();
   renderNow(D); drawCardCharts(); loadInfo(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); renderBreadth();
-  const h = location.hash.slice(1); if (h && document.getElementById(h)) showTab(h);
+  const h = location.hash.slice(1); showTab(h && document.getElementById(h) ? h : firstTab());
 }
 if (sbClient()) SB.auth.onAuthStateChange((ev) => {
   if (ev === "PASSWORD_RECOVERY") return gate("newpw");
