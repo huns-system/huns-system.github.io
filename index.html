@@ -748,11 +748,12 @@ function aggregate(bars, sec, off=0){
   if(cur) out.push(cur); return out;
 }
 const precOf = p => p>=1000?1 : p>=100?2 : p>=1?4 : p>=0.01?5 : 7;
+const TRADE_LV = new Set(["entry","sl","tp","stop","exit"]);
 const LV = {entry:{c:"#e8e6e1",st:2}, sl:{c:"#e5534b",st:0}, tp:{c:"#2fbf71",st:0}, stop:{c:"#d9a43a",st:2}, exit:{c:"#b48cf2",st:0}};
 
 function chartItems(){
   const it = (CH.snap?.items||[]);
-  return it.filter(x => CH.show==="all" || x.kind===CH.show);
+  return it.filter(x => (IS_ADMIN || x.kind!=="signal") && (CH.show==="all" || x.kind===CH.show));
 }
 function cellHead(x){
   if(x.kind==="signal"){
@@ -781,19 +782,19 @@ function drawOne(el, x, bars){
   };
   set(bars);
   const lo = Math.min(...bars.map(k=>k[3])), hi = Math.max(...bars.map(k=>k[2]));
-  const keep = (x.levels||[]).filter(l=>(l.kind==="entry"||l.kind==="sl"||l.kind==="stop") && l.price>=lo*0.7 && l.price<=hi*1.3).map(l=>l.price);
+  const keep = (x.levels||[]).filter(l=>IS_ADMIN && (l.kind==="entry"||l.kind==="sl"||l.kind==="stop") && l.price>=lo*0.7 && l.price<=hi*1.3).map(l=>l.price);
   if(keep.length) cs.applyOptions({autoscaleInfoProvider: orig => { const r = orig(); if(!r||!r.priceRange) return r;
     r.priceRange.minValue = Math.min(r.priceRange.minValue, ...keep); r.priceRange.maxValue = Math.max(r.priceRange.maxValue, ...keep); return r; }});
   const lines = [];
   const levels = () => {
     lines.splice(0).forEach(l=>cs.removePriceLine(l));
-    (x.levels||[]).forEach(l => { const m=LV[l.kind]||LV.entry; lines.push(cs.createPriceLine({price:l.price, color:m.c, lineWidth:1, lineStyle:m.st, axisLabelVisible:true, title:l.name})); });
+    (x.levels||[]).filter(l => IS_ADMIN || !TRADE_LV.has(l.kind)).forEach(l => { const m=LV[l.kind]||LV.entry; lines.push(cs.createPriceLine({price:l.price, color:m.c, lineWidth:1, lineStyle:m.st, axisLabelVisible:true, title:l.name})); });
     const b = curBars, tEnd = b.at(-1)?.[0]||0, day = b.filter(k=>k[0] >= tEnd-86400+1);
     if(day.length && (TF_SEC[CH.tf]||900)<86400){
       lines.push(cs.createPriceLine({price:Math.max(...day.map(k=>k[2])), color:"#7fb2f2", lineWidth:1, lineStyle:3, axisLabelVisible:true, title:"dmax"}));
       lines.push(cs.createPriceLine({price:Math.min(...day.map(k=>k[3])), color:"#7fb2f2", lineWidth:1, lineStyle:3, axisLabelVisible:true, title:"dmin"}));
     }
-    if(x.entry_t){ const hit = b.filter(k=>k[0]<=x.entry_t).at(-1);
+    if(IS_ADMIN && x.entry_t){ const hit = b.filter(k=>k[0]<=x.entry_t).at(-1);
       if(hit) cs.setMarkers([{time:hit[0]+KST, position:"belowBar", color:"#e8e6e1", shape:"arrowUp", text:"진입"}]); }
   };
   let curBars = bars; levels();
@@ -1010,6 +1011,7 @@ async function signUrls(paths){
     (data||[]).forEach(d => { if (d.signedUrl) INFO.urls[d.path] = d.signedUrl; });
   }
 }
+const rsn = x => (!IS_ADMIN && x.kind==="entry") ? "레인 조건 관찰 종목" : (x.reason||"");
 const KIND = {entry:"관찰", onchain:"고래 이동", move:"급변", other:"기타"};
 async function infoGet(path){
   if (window.__DATA__?.info && !SB) return path==="index.json" ? window.__DATA__.info.index : window.__DATA__.info.symbols[path.replace("charts/","").replace(".json","")];
@@ -1024,7 +1026,7 @@ function renderInfo(){
   $("#iGrid").innerHTML = items.length ? items.map(x=>`<div class="icard" data-s="${esc(x.symbol)}" data-img="${esc(x.image)}">
       <div class="th" style="background-image:url('${imgUrl(x.thumb||x.image)}')"></div>
       <div class="m"><div class="r1"><span class="s">${esc(x.symbol)}</span><span class="tag k-${x.kind}">${KIND[x.kind]||"기타"}</span><span class="t">${kst(x.ts)}</span></div>
-      <div class="rs">${esc(x.reason)}${x.entry!=null? ` · 진입 ${px(x.entry)} / 손절 ${px(x.sl)}`:""}</div></div></div>`).join("")
+      <div class="rs">${esc(rsn(x))}${IS_ADMIN && x.entry!=null? ` · 진입 ${px(x.entry)} / 손절 ${px(x.sl)}`:""}</div></div></div>`).join("")
     : `<div class="empty">조건에 맞는 차트 없음</div>`;
 }
 async function openInfo(sym, image){
@@ -1037,7 +1039,7 @@ async function openInfo(sym, image){
   $("#iTitle").textContent = `${sym} · ${KIND[cur.kind]||""} · ${kst(cur.ts)} KST`;
   $("#iImg").src = imgUrl(cur.image);
   const card = cur.card && Object.keys(cur.card).length ? `<table>${Object.entries(cur.card).map(([k,v])=>`<tr><td class="mean">${esc(k)}</td><td class="num">${esc(typeof v==="number"? (Math.abs(v)<1? v.toPrecision(3): v.toLocaleString()) : v)}</td></tr>`).join("")}</table>` : "";
-  $("#iMeta").innerHTML = `<div><b>${esc(cur.reason)}</b></div>${cur.entry!=null? `<div class="mean">진입 ${px(cur.entry)} · 손절 ${px(cur.sl)}</div>`:""}
+  $("#iMeta").innerHTML = `<div><b>${esc(rsn(cur))}</b></div>${IS_ADMIN && cur.entry!=null? `<div class="mean">진입 ${px(cur.entry)} · 손절 ${px(cur.sl)}</div>`:""}
      ${cur.caption? `<pre>${esc(cur.caption)}</pre>`:""}${card}<div class="note">정보 표시용 — 진입 판단 아님</div>
      ${hist.length>1? `<div class="mean" style="margin-top:10px">이 종목 이전 차트 ${hist.length}장 (최근 14일)</div>`:""}`;
   $("#iHist").innerHTML = hist.length>1 ? hist.map(h=>`<div class="${h.image===cur.image?"on":""}" data-img="${esc(h.image)}" style="background-image:url('${imgUrl(h.thumb||h.image)}')"><span>${kst(h.ts)}</span></div>`).join("") : "";
@@ -1110,15 +1112,15 @@ $("#rView").onclick = e => { const v=e.target.dataset?.v; if(!v) return; RK.view
 
 /* ───── 이벤트 탭 ───── */
 const EV = {data:null, f:"all", open:null, ch:null};
-const EVF = [["all","전체"],["MM_WD","MM 출금"],["MM_DEP","MM 입금"],["W","감시 지갑"],["FUND","펀딩·OI"],["LANE","레인 진입"],["wait","결과 대기만"]];
+const EVF_ALL = [["all","전체"],["MM_WD","MM 출금"],["MM_DEP","MM 입금"],["W","감시 지갑"],["FUND","펀딩·OI"],["LANE","레인 진입"],["wait","결과 대기만"]];
 const evCls = t => ({MM_DEP:"k-dep",W_DEP:"k-dep",MM_WD:"k-wd",W_WD:"k-wd",FUND:"k-fund",LANE:"k-lane"}[t]||"");
 const evSt = c => c.status==="확정" ? ["st-done","결과 확정"] : c.status==="진행 중" ? ["st-run","진행 중"] : ["st-wait","결과 대기"];
 const kstFull = s => new Date(s*1000).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
 const utcHM = s => new Date(s*1000).toISOString().slice(11,16);
-function evPass(c){ const f=EV.f; if(f==="all") return true; if(f==="W") return c.type==="W_WD"||c.type==="W_DEP"; if(f==="wait") return c.status!=="확정"; return c.type===f; }
+function evPass(c){ if(!IS_ADMIN && c.type==="LANE") return false; const f=EV.f; if(f==="all") return true; if(f==="W") return c.type==="W_WD"||c.type==="W_DEP"; if(f==="wait") return c.status!=="확정"; return c.type===f; }
 function renderEvents(){
-  const D = EV.data, cards = (D&&D.cards)||[];
-  $("#evTool").innerHTML = EVF.map(([k,n])=>`<button data-f="${k}" class="${EV.f===k?"on":""}">${n}</button>`).join("") +
+  const D = EV.data, cards = ((D&&D.cards)||[]).filter(c=>IS_ADMIN||c.type!=="LANE");
+  $("#evTool").innerHTML = EVF_ALL.filter(([k])=>IS_ADMIN||k!=="LANE").map(([k,n])=>`<button data-f="${k}" class="${EV.f===k?"on":""}">${n}</button>`).join("") +
     `<span class="live" style="align-self:center">${cards.length? `최근 24시간 ${cards.filter(c=>Date.now()/1000-c.card_t<86400).length}건 · 대기·진행 ${cards.filter(c=>c.status!=="확정").length} · 확정 ${cards.filter(c=>c.status==="확정").length}`:""}</span>`;
   $("#evTool").onclick = e => { const f=e.target.dataset?.f; if(!f) return; EV.f=f; renderEvents(); };
   const L = cards.filter(evPass);
@@ -1156,7 +1158,7 @@ function evCard(c){
     <div class="sh"><span>스캔 판정</span><span class="x">카드 생성 시점 1회</span></div>${scan}
     <div class="hr"></div>
     <div class="two"><div><div class="sh"><span>과거 같은 종류</span></div>${br}</div>
-      <div><div class="sh"><span>같은 주체 · 우리 레인</span></div><div class="hist">${c.entity?`<div class="mean">${esc(c.entity)} · 최근 30일</div>`:""}${hist||(c.entity?'<div class="mean">기록 없음</div>':"")}<div class="mean">우리 레인: ${esc(c.lane||"—")}</div>${(c.related||[]).length?`<div class="mean">같은 종목 ±6시간 카드: ${c.related.map(esc).join(", ")}</div>`:""}</div></div></div>
+      <div><div class="sh"><span>같은 주체 · 우리 레인</span></div><div class="hist">${c.entity?`<div class="mean">${esc(c.entity)} · 최근 30일</div>`:""}${hist||(c.entity?'<div class="mean">기록 없음</div>':"")}${IS_ADMIN?`<div class="mean">우리 레인: ${esc(c.lane||"—")}</div>`:""}${(c.related||[]).length?`<div class="mean">같은 종목 ±6시간 카드: ${c.related.map(esc).join(", ")}</div>`:""}</div></div></div>
     <div class="hr"></div>
     <div class="mean" style="margin-bottom:6px">이후 결과 (카드 생성 다음 15분봉 시가 기준, 자동 기록)</div>
     <div class="res">${R("+4h",r.r4h)}${R("+24h",r.r24h)}${R("+7일",r.r7d)}<div><div class="l">최대 상승 / 하락</div><div class="v">${r.mfe!=null?`<span class="pos">${pct(r.mfe,1)}</span> / <span class="neg">${pct(r.mae,1)}</span>`:'<span class="mean">대기</span>'}</div></div></div>
@@ -1191,6 +1193,8 @@ const firstTab = () => IS_ADMIN ? "now" : "info";
 function setAdmin(on){
   IS_ADMIN = on;
   document.querySelectorAll("nav button.adm").forEach(b=>b.hidden=!on);
+  const sb=document.querySelector('#cShow button[data-v="signal"]'); if(sb) sb.hidden=!on;
+  if(!on && CH.show==="signal") CH.show="all";
 }
 function showTab(t){
   if (ADMIN_TABS.has(t) && !IS_ADMIN) t = firstTab();
