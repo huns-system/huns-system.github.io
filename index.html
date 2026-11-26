@@ -111,6 +111,40 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 .oc .flows{margin-top:12px;font-size:12.5px}
 .oc .flows td{padding:4px 6px}
 .oc .foot{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:12px;font-size:11px;color:var(--faint)}
+
+/* 이벤트 카드 */
+.evtool{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0 12px}
+.evtool button{background:none;border:1px solid var(--line);color:var(--dim);padding:4px 11px;border-radius:999px;font:inherit;font-size:12.5px;cursor:pointer}
+.evtool button.on{background:#1d2a3d;border-color:#3b8beb88;color:#a9cbf5}
+.evrow{display:grid;grid-template-columns:96px 74px minmax(0,1fr) 170px 120px;gap:10px;align-items:center;padding:10px 12px;border-bottom:1px solid #262626;font-size:13.5px;cursor:pointer}
+.evrow:hover{background:#1b1b1b}.evrow.open{background:#1c1c1c}
+.evrow .s{font-family:var(--mono);font-weight:600}.evrow .t{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.evrow .bd{font-size:12px;color:var(--dim)}.evrow .rs{font-family:var(--mono);font-size:12.5px;text-align:right}
+@media(max-width:760px){.evrow{grid-template-columns:70px 60px minmax(0,1fr)}.evrow .bd,.evrow .rs{display:none}}
+.ekind{font-size:11.5px;padding:2px 8px;border-radius:6px;margin-right:6px;white-space:nowrap}
+.k-dep{background:#3a1a18;color:#f19a91}.k-wd{background:#13302a;color:#6fd3ae}.k-fund{background:#3a2c10;color:#f0c46a}.k-lane{background:#16273d;color:#8dbcf3}
+.evc{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:6px 0 14px}
+.evc .bar{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 16px;background:#191919;border-bottom:1px solid var(--line);font-size:12px;color:var(--dim)}
+.evc .st{font-size:11.5px;padding:2px 9px;border-radius:6px}.st-wait{background:#16273d;color:#8dbcf3}.st-run{background:#3a2c10;color:#f0c46a}.st-done{background:#13302a;color:#6fd3ae}
+.evc .in{padding:14px 16px 16px}
+.evc .hd{display:flex;align-items:center;gap:10px}
+.evc .av{width:38px;height:38px;border-radius:50%;background:#2a2340;color:#c3b3f5;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;font-family:var(--mono)}
+.evc .ttl{font-size:19px;font-weight:600;line-height:1.4;margin:12px 0 8px}
+.evc .chips{display:flex;gap:6px;flex-wrap:wrap}.evc .chip{font-size:12px;padding:3px 9px;border-radius:6px;background:#262626;color:#cfccc4}.evc .chip.w{background:#3a2c10;color:#f0c46a}
+.evc .main{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(0,1fr);gap:12px;margin-top:14px}
+@media(max-width:760px){.evc .main{grid-template-columns:1fr}}
+.evc .cv{height:290px;background:#111;border:1px solid #262626;border-radius:8px;position:relative}
+.evc .tiles{display:flex;flex-direction:column;gap:8px}
+.evc .tile{background:#242424;border-radius:8px;padding:9px 12px}.evc .tile .l{font-size:12px;color:var(--dim)}.evc .tile .v{font-family:var(--mono);font-size:18px;font-weight:600;margin-top:1px}.evc .tile .x{font-size:11.5px;color:var(--faint)}
+.evc .lsb{height:6px;background:#4a2320;border-radius:3px;overflow:hidden;margin-top:6px}.evc .lsb i{display:block;height:100%;background:var(--up)}
+.evc .hr{border-top:1px solid var(--line);margin:14px 0 12px}
+.evc .sh{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between}
+.evc .sh .x{font-weight:400;font-size:12px;color:var(--faint)}
+.evc .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:760px){.evc .two{grid-template-columns:1fr}}
+.evc .box{background:#242424;border-radius:8px;padding:10px 12px;font-size:13px}
+.evc .hist div{font-size:13px;line-height:1.7}.evc .hist .d{font-family:var(--mono);font-size:12px;color:var(--faint)}
+.evc .res{display:flex;gap:8px}.evc .res>div{flex:1;text-align:center;padding:8px 0;border:1px dashed #3a3a3a;border-radius:8px}.evc .res .l{font-size:12px;color:var(--dim)}.evc .res .v{font-family:var(--mono);font-weight:600}
+.evc .foot{display:flex;justify-content:space-between;margin-top:12px;font-size:11.5px;color:var(--faint);flex-wrap:wrap;gap:6px}
 /* 종합 차트 */
 .igrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
 .icard{background:var(--panel);border:1px solid var(--line);border-radius:10px;overflow:hidden;cursor:pointer;transition:border-color .15s}
@@ -180,6 +214,7 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 <div class="demo" id="demo" style="display:none">샘플 데이터로 그린 미리보기입니다. 종목·신호·비율 모두 가짜 값이며 실제 시장과 무관합니다.</div>
 <nav id="nav">
   <button data-t="now" class="on">지금</button>
+  <button data-t="events">이벤트</button>
   <button data-t="info">종합 차트</button>
   <button data-t="rank">후보 순위</button>
   <button data-t="charts">차트</button>
@@ -193,12 +228,20 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 <section id="now" class="on">
   <div class="grid" id="kpis"></div>
   <div class="brief"><h3 id="briefTitle">이번 시간 브리핑</h3><div id="brief"></div></div>
+  <div id="evNow"></div>
   <h2>보유 중 <span class="sub" id="openSub">레인 조건을 모두 통과해 진입한 종목 · 데이터와 차트</span></h2>
   <div id="openCards"></div>
   <h2>HS · 선별 <span class="sub" id="hsSub">매일 09:00 KST 일봉 마감 직후 선별</span></h2>
   <div id="hsBox"></div>
   <h2>감시 목록 <span class="sub">조건 일부만 충족 — 진입 근거 아님, 검증 안 된 관찰용</span></h2>
   <div class="cols"><div class="card" id="watchNX"></div><div class="card" id="watchCB"></div></div>
+</section>
+
+<section id="events">
+  <h2>이벤트 <span class="sub" id="evSub">조건이 충족된 순간 자동으로 만든 카드 · 그때 알 수 있던 값만 · 결과는 나중에 채움</span></h2>
+  <div class="evtool" id="evTool"></div>
+  <div class="card" style="padding:0;overflow:hidden" id="evList"></div>
+  <p class="note">정보 표시용 — 진입 판단 아님. 카드 기준: 같은 종목·같은 종류 24시간 합이 처음 기준을 넘은 순간(BSC 감시기), 펀딩 극단과 OI 급증, 엔진 레인 진입. 판 상태는 카드를 만든 시각의 값이다.</p>
 </section>
 
 <section id="info">
@@ -326,9 +369,9 @@ async function sbFiles(names){
 }
 async function load(){
   if (window.__DATA__ && !window.__SB_FAKE__) return window.__DATA__;
-  const m = await sbFiles(["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json"]);
+  const m = await sbFiles(["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json","events.json"]);
   return {latest:m["latest.json"], signals:m["signals.json"]||[], score:m["scoreboard.json"], breadth:m["breadth.json"],
-          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"]};
+          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"], events:m["events.json"]};
 }
 function gate(view, msg){
   const G = $("#gbox"); $("#gate").hidden = false;
@@ -1063,12 +1106,90 @@ function renderRank(){
 }
 $("#rView").onclick = e => { const v=e.target.dataset?.v; if(!v) return; RK.view=v; document.querySelectorAll("#rView button").forEach(b=>b.classList.toggle("on",b===e.target)); renderRank(); };
 
+
+/* ───── 이벤트 탭 ───── */
+const EV = {data:null, f:"all", open:null, ch:null};
+const EVF = [["all","전체"],["MM_WD","MM 출금"],["MM_DEP","MM 입금"],["W","감시 지갑"],["FUND","펀딩·OI"],["LANE","레인 진입"],["wait","결과 대기만"]];
+const evCls = t => ({MM_DEP:"k-dep",W_DEP:"k-dep",MM_WD:"k-wd",W_WD:"k-wd",FUND:"k-fund",LANE:"k-lane"}[t]||"");
+const evSt = c => c.status==="확정" ? ["st-done","결과 확정"] : c.status==="진행 중" ? ["st-run","진행 중"] : ["st-wait","결과 대기"];
+const kstFull = s => new Date(s*1000).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
+const utcHM = s => new Date(s*1000).toISOString().slice(11,16);
+function evPass(c){ const f=EV.f; if(f==="all") return true; if(f==="W") return c.type==="W_WD"||c.type==="W_DEP"; if(f==="wait") return c.status!=="확정"; return c.type===f; }
+function renderEvents(){
+  const D = EV.data, cards = (D&&D.cards)||[];
+  $("#evTool").innerHTML = EVF.map(([k,n])=>`<button data-f="${k}" class="${EV.f===k?"on":""}">${n}</button>`).join("") +
+    `<span class="live" style="align-self:center">${cards.length? `최근 24시간 ${cards.filter(c=>Date.now()/1000-c.card_t<86400).length}건 · 대기·진행 ${cards.filter(c=>c.status!=="확정").length} · 확정 ${cards.filter(c=>c.status==="확정").length}`:""}</span>`;
+  $("#evTool").onclick = e => { const f=e.target.dataset?.f; if(!f) return; EV.f=f; renderEvents(); };
+  const L = cards.filter(evPass);
+  if(!L.length){ $("#evList").innerHTML = `<div class="empty" style="border:0">${cards.length?"이 종류의 카드 없음":"아직 카드 없음 — 조건이 충족되면 매시 실행 때 자동으로 생긴다"}</div>`; return; }
+  const bd = c => { const b=c.board||{}; return [b.chg24!=null?`24h ${pct(b.chg24,1)}`:null, b.long_acc!=null?`롱 ${b.long_acc}%`:null].filter(Boolean).join(" · ")||"—"; };
+  const rs = c => { const r=c.result; if(!r) return `<span class="mean">대기</span>`; const v = r.r7d!=null?["+7일",r.r7d]: r.r24h!=null?["+24h",r.r24h]:["+4h",r.r4h]; return `<span class="mean">${v[0]}</span> <span class="${cls(v[1])}">${pct(v[1],1)}</span>`; };
+  $("#evList").innerHTML = L.map(c=>`<div class="evrow ${EV.open===c.id?"open":""}" data-id="${c.id}"><span class="t">${kst(c.event_at)}</span><span class="s">${esc(c.base)}</span>
+    <span><span class="ekind ${evCls(c.type)}">${esc(c.kind)}</span>${esc(c.title)}${(c.related||[]).length?` <span class="mean">· 같은 시간대 ${c.related.length}</span>`:""}</span><span class="bd">${bd(c)}</span><span class="rs">${rs(c)}</span></div>
+    ${EV.open===c.id? evCard(c):""}`).join("");
+  $("#evList").querySelectorAll(".evrow").forEach(r=>r.onclick=()=>{ EV.open = EV.open===r.dataset.id? null : r.dataset.id; renderEvents(); });
+  if(EV.ch){ EV.ch.remove(); EV.ch=null; }
+  const oc = L.find(c=>c.id===EV.open); if(oc) evChart(oc);
+}
+function evCard(c){
+  const b=c.board||{}, [sc,sn]=evSt(c), r=c.result||{};
+  const oiX = b.oi0&&b.oi1 ? (b.oi1/b.oi0) : null;
+  const tiles = c.sym ? `
+    <div class="tile"><div class="l">카드 생성 전 24시간</div><div class="v ${cls(b.chg24)}">${pct(b.chg24,1)}</div><div class="x">10일 ${pct(b.chg10d,1)} · BTC 24h ${pct(b.btc24,1)}</div></div>
+    <div class="tile"><div class="l">펀딩 · 미결제약정</div><div class="v">${b.funding!=null?pct(b.funding,3):"—"} <span style="font-size:13px;color:var(--dim)">${oiX?"/ OI ×"+oiX.toFixed(1):""}</span></div><div class="x">${b.oi0?`${usdM(b.oi0)} → ${usdM(b.oi1)} (24h)`:""}</div></div>
+    <div class="tile"><div class="l">개인 롱 계정</div><div class="v">${b.long_acc!=null?b.long_acc+"%":"—"}</div>${b.long_acc!=null?`<div class="lsb"><i style="width:${b.long_acc}%"></i></div><div class="x" style="margin-top:4px">${100-b.long_acc}% 숏</div>`:""}</div>` : `<div class="tile"><div class="l">${esc(c.note||"판 상태 없음")}</div></div>`;
+  const scan = c.scan ? (c.scan.items||[]).map(x=>`<div style="padding:6px 0;border-top:1px solid #2a2a2a"><b ${x.warn?'style="color:var(--down)"':""}>${esc(x.name)}</b> <span class="tag">${esc(x.check||"")}</span><div class="mean">${esc(x.desc||"")}</div></div>`).join("")
+    : `<div class="box mean">스캔 연결 전 — Hun's scan(deep_analyzer)을 연결하면 카드 생성 시점 판정이 여기에 붙는다</div>`;
+  const br = c.base_rate ? `<div class="box">n ${esc(c.base_rate.n)} · 24h 중앙 ${esc(c.base_rate.med24)} · 7일 중앙 ${esc(c.base_rate.med7d)} <span class="tag">${esc(c.base_rate.label||"")}</span></div>`
+    : `<div class="box mean">아직 계산 안 됨 · EV1 결과 대기</div>`;
+  const hist = (c.history||[]).map(h=>`<div><span style="color:${h.dir==="wd"?"var(--up)":"var(--down)"}">${h.dir==="wd"?"▲":"▼"}</span> <span class="d">${esc(h.day)}</span> ${esc(h.base)} ${h.dir==="wd"?"거래소에서 뺌":"거래소로 넣음"} ${usd(h.usd)}</div>`).join("");
+  const R = (l,v) => `<div><div class="l">${l}</div><div class="v ${cls(v)}">${v==null?'<span class="mean">대기</span>':pct(v,1)}</div></div>`;
+  return `<div class="evc"><div class="bar"><span>카드 생성 ${kstFull(c.card_t)} KST <span style="color:var(--faint)">(${utcHM(c.card_t)} UTC)</span></span><span><span style="color:var(--faint);font-family:var(--mono)">#${esc(c.id)}</span> &nbsp;<span class="st ${sc}">${sn}</span></span></div>
+  <div class="in">
+    <div class="hd"><div class="av">${esc(c.base.slice(0,4))}</div><div style="flex:1"><div style="font-weight:600">${esc(c.base)} <span class="mean" style="font-weight:400">· ${c.sym?"바이낸스 선물":"선물 없음"}${c.type.startsWith("MM")||c.type.startsWith("W_")?" · BSC":""}</span></div>
+      <div class="mean">이벤트 ${kst(c.event_at)} KST${b.price?` · 그때 가격 ${px(b.price)}`:""}</div></div><span class="ekind ${evCls(c.type)}" style="font-size:12.5px;padding:4px 10px">${esc(c.kind)}</span></div>
+    <div class="ttl">${esc(c.title)}</div>
+    <div class="chips">${(c.chips||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}${c.situ?`<span class="chip w">${esc(c.situ)}</span>`:""}</div>
+    <div class="main"><div><div class="mean" style="margin-bottom:4px">2시간봉 · 카드 생성 시각까지 <span style="color:#3fa7c4">▲ 출금</span> <span style="color:#ef6a5e">▼ 입금</span> <span style="color:#f0c46a">● 이벤트</span></div><div class="cv" id="evCv">${c.bars&&c.bars.length?"":'<div class="mean" style="padding:20px">차트 없음</div>'}</div></div><div class="tiles">${tiles}</div></div>
+    <div class="hr"></div>
+    <div class="sh"><span>스캔 판정</span><span class="x">카드 생성 시점 1회</span></div>${scan}
+    <div class="hr"></div>
+    <div class="two"><div><div class="sh"><span>과거 같은 종류</span></div>${br}</div>
+      <div><div class="sh"><span>같은 주체 · 우리 레인</span></div><div class="hist">${c.entity?`<div class="mean">${esc(c.entity)} · 최근 30일</div>`:""}${hist||(c.entity?'<div class="mean">기록 없음</div>':"")}<div class="mean">우리 레인: ${esc(c.lane||"—")}</div>${(c.related||[]).length?`<div class="mean">같은 종목 ±6시간 카드: ${c.related.map(esc).join(", ")}</div>`:""}</div></div></div>
+    <div class="hr"></div>
+    <div class="mean" style="margin-bottom:6px">이후 결과 (카드 생성 다음 15분봉 시가 기준, 자동 기록)</div>
+    <div class="res">${R("+4h",r.r4h)}${R("+24h",r.r24h)}${R("+7일",r.r7d)}<div><div class="l">최대 상승 / 하락</div><div class="v">${r.mfe!=null?`<span class="pos">${pct(r.mfe,1)}</span> / <span class="neg">${pct(r.mae,1)}</span>`:'<span class="mean">대기</span>'}</div></div></div>
+    <div class="foot"><span>정보 표시용 — 진입 판단 아님</span><span>${(c.txs||[]).slice(-3).map(t=>`<a href="https://bscscan.com/tx/${esc(t)}" target="_blank" rel="noopener">tx</a>`).join(" ")}</span></div>
+  </div></div>`;
+}
+function evChart(c){
+  const el = $("#evCv"); if(!el || !c.bars || !c.bars.length || !window.LightweightCharts) return;
+  const ch = LightweightCharts.createChart(el, {autoSize:true, layout:{background:{type:"solid",color:"#111"}, textColor:"#8a877f", fontSize:11},
+    grid:{vertLines:{color:"#1b1b1b"}, horzLines:{color:"#1b1b1b"}}, timeScale:{timeVisible:true, borderColor:"#262626"}, rightPriceScale:{borderColor:"#262626"}, crosshair:{mode:0}});
+  EV.ch = ch;
+  const pr = precOf(c.bars.at(-1)[4]);
+  const cs = ch.addCandlestickSeries({upColor:"#2fbf71", downColor:"#e5534b", borderVisible:false, wickUpColor:"#2fbf71", wickDownColor:"#e5534b", priceFormat:{type:"price",precision:pr,minMove:Math.pow(10,-pr)}});
+  cs.setData(c.bars.map(k=>({time:k[0]+KST, open:k[1], high:k[2], low:k[3], close:k[4]})));
+  cs.priceScale().applyOptions({scaleMargins:{top:0.14, bottom:0.22}});
+  const vs = ch.addHistogramSeries({priceFormat:{type:"volume"}, priceScaleId:"v"});
+  vs.priceScale().applyOptions({scaleMargins:{top:0.82, bottom:0}});
+  vs.setData(c.bars.map(k=>({time:k[0]+KST, value:k[5], color:k[4]>=k[1]?"#2fbf7140":"#e5534b40"})));
+  const t0=c.bars[0][0], sec=7200, mx=Math.max(1,...(c.marks||[]).map(x=>x.usd));
+  const mk = (c.marks||[]).filter(x=>x.t>=t0).map(x=>({time:Math.floor(x.t/sec)*sec+KST, position:x.dir==="wd"?"belowBar":"aboveBar", shape:x.dir==="wd"?"arrowUp":"arrowDown",
+      color:x.dir==="wd"?"#3fa7c4":"#ef6a5e", size:0.5+1.0*Math.sqrt(x.usd/mx), text:""}));
+  const eb = Math.min(Math.floor(c.event_t/sec)*sec, c.bars.at(-1)[0]);
+  mk.push({time:eb+KST, position:"aboveBar", shape:"circle", color:"#f0c46a", size:0.6, text:""});
+  cs.setMarkers(mk.sort((a,b)=>a.time-b.time));
+  ch.timeScale().fitContent();
+}
+
 function showTab(t){
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
   document.querySelectorAll("section").forEach(s=>s.classList.toggle("on", s.id===t));
   if(t==="charts" && !CH.drawn && window.LightweightCharts){ CH.drawn=true; renderCharts(); renderTV(); }
   if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); }
   if(t==="members"){ MV.armed = null; renderMembers(); }
+  if(t==="events") renderEvents();
 }
 $("#nav").onclick = e => { const t=e.target.dataset?.t; if(!t) return; showTab(t); if(location.hash.slice(1)!==t) history.replaceState(null,"","#"+t); };
 $("#range").onclick = e => { const r=e.target.dataset?.r; if(r==null) return; RANGE=+r; document.querySelectorAll("#range button").forEach(b=>b.classList.toggle("on",b===e.target)); renderBreadth(); };
@@ -1078,9 +1199,13 @@ async function boot(){
   const D = await load();
   if (window.__DATA__ && window.__DATA__.demo) $("#demo").style.display="block";
   $("#stamp").innerHTML = D.latest ? `마지막 갱신 ${kst(D.latest.generated_at)} KST<br>다음 갱신 매시 5분` : "데이터를 불러오지 못했습니다";
-  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; window.__LIVE__ = D.live||{}; RK.data = D.ranks; renderRank();
+  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; window.__LIVE__ = D.live||{}; RK.data = D.ranks; renderRank(); EV.data = D.events;
+  { const cs=(D.events&&D.events.cards)||[], d=cs.filter(c=>Date.now()/1000-c.card_t<86400);
+    const by={}; d.forEach(c=>by[c.kind]=(by[c.kind]||0)+1);
+    $("#evNow").innerHTML = d.length? `<div class="card" style="padding:10px 16px;cursor:pointer" onclick="showTab('events')">이벤트 최근 24시간 <b>${d.length}건</b> <span class="mean">— ${Object.entries(by).map(([k,n])=>esc(k)+" "+n).join(" · ")}</span> <span style="color:var(--blue);float:right">보기 →</span></div>` : ""; }
   if (OC.drawn){ renderBSC(); renderOnchain(); }
   if (CH.drawn) renderCharts();
+  if ($("#events").classList.contains("on")) renderEvents();
   renderNow(D); drawCardCharts(); loadInfo(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); renderBreadth();
   const h = location.hash.slice(1); if (h && document.getElementById(h)) showTab(h);
 }
