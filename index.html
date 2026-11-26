@@ -241,7 +241,9 @@ svg text{font-family:'Noto Sans KR',sans-serif}
   <h2>이벤트 <span class="sub" id="evSub">조건이 충족된 순간 자동으로 만든 카드 · 그때 알 수 있던 값만 · 결과는 나중에 채움</span></h2>
   <div class="evtool" id="evTool"></div>
   <div class="card" style="padding:0;overflow:hidden" id="evList"></div>
-  <p class="note">정보 표시용 — 진입 판단 아님. 카드 기준: 같은 종목·같은 종류 24시간 합이 처음 기준을 넘은 순간(BSC 감시기), 펀딩 극단과 OI 급증, 엔진 레인 진입. 판 상태는 카드를 만든 시각의 값이다.</p>
+  <p class="note">정보 표시용 — 진입 판단 아님. 카드 기준: 같은 종목·같은 종류 24시간 합이 처음 기준을 넘은 순간(BSC 감시기 · 큰 지갑은 지갑 하나 $1M+), 펀딩 극단과 OI 급증. 판 상태·스캔은 카드를 만든 시각의 값이다. '과거 같은 종류'는 같은 이벤트가 과거에 난 뒤 7일, 같은 상태(직전 10일 등락)의 다른 코인과 비교한 값 — 2023~2026 연구 표(EV3·DV1).</p>
+  <h2 style="margin-top:22px">다가오는 언락 <span class="sub" id="unSub">앞으로 7일 · 유통량 2% 이상</span></h2>
+  <div class="card" style="padding:0;overflow:hidden" id="unList"></div>
 </section>
 
 <section id="info">
@@ -289,6 +291,10 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 
 <section id="onchain">
   <div id="bscWrap"></div>
+  <h2>지갑 과거 성적 순위 <span class="sub">감시·MM 지갑 · 우리 감시 종목 안 매매만</span></h2>
+  <div class="evtool" id="wrTool"></div>
+  <div class="card" style="padding:0;overflow:auto" id="wrList"></div>
+  <p class="note" id="wrNote"></p>
   <h2 id="ocTitle">지정 지갑 추적</h2>
   <div id="ocWrap"></div>
   <p class="note">등록한 지갑의 토큰 들고 남을 매시 체인에서 직접 읽어 그린다. 금색 계단 = 지갑 보유량(왼쪽 축), 흰 선 = 바이낸스 선물 4시간봉(오른쪽 축). 거래소 여부는 주소 라벨 목록 기준이라 라벨이 없는 입금 주소는 '미분류'로 남는다. <b>관찰 기록이며 진입 근거가 아니다</b> — 우리 연구에서 지갑 이동 단독은 아직 엣지가 확인되지 않았다(R117·OC9).</p>
@@ -370,12 +376,12 @@ async function sbFiles(names){
 }
 async function load(){
   if (window.__DATA__ && !window.__SB_FAKE__) return window.__DATA__;
-  const names = ["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json","events.json"];
+  const names = ["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json","events.json","unlocks.json","wallets.json"];
   // 관리자: 매매 내역이 든 원본은 adm/… (데이터베이스 규칙이 관리자만 읽게 막음). 없으면 같은 이름 파일로
   const m = await sbFiles(IS_ADMIN ? names.concat(ADM_FILES.map(n=>"adm/"+n)) : names);
   if (IS_ADMIN) ADM_FILES.forEach(n => { if (m["adm/"+n] != null) m[n] = m["adm/"+n]; });
   return {latest:m["latest.json"], signals:m["signals.json"]||[], score:m["scoreboard.json"], breadth:m["breadth.json"],
-          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"], events:m["events.json"]};
+          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"], events:m["events.json"], unlocks:m["unlocks.json"], wallets:m["wallets.json"]};
 }
 function gate(view, msg){
   const G = $("#gbox"); $("#gate").hidden = false;
@@ -1117,12 +1123,12 @@ $("#rView").onclick = e => { const v=e.target.dataset?.v; if(!v) return; RK.view
 
 /* ───── 이벤트 탭 ───── */
 const EV = {data:null, f:"all", open:null, ch:null};
-const EVF_ALL = [["all","전체"],["MM_WD","MM 출금"],["MM_DEP","MM 입금"],["W","감시 지갑"],["FUND","펀딩·OI"],["LANE","레인 진입"],["wait","결과 대기만"]];
-const evCls = t => ({MM_DEP:"k-dep",W_DEP:"k-dep",MM_WD:"k-wd",W_WD:"k-wd",FUND:"k-fund",LANE:"k-lane"}[t]||"");
+const EVF_ALL = [["all","전체"],["MM_WD","MM 출금"],["MM_DEP","MM 입금"],["W","감시 지갑"],["BIG","큰 지갑↔거래소"],["FUND","펀딩·OI"],["LANE","레인 진입"],["wait","결과 대기만"]];
+const evCls = t => ({MM_DEP:"k-dep",W_DEP:"k-dep",BIG_DEP:"k-dep",MM_WD:"k-wd",W_WD:"k-wd",BIG_WD:"k-wd",FUND:"k-fund",LANE:"k-lane"}[t]||"");
 const evSt = c => c.status==="확정" ? ["st-done","결과 확정"] : c.status==="진행 중" ? ["st-run","진행 중"] : ["st-wait","결과 대기"];
 const kstFull = s => new Date(s*1000).toLocaleString("ko-KR",{timeZone:"Asia/Seoul",year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false});
 const utcHM = s => new Date(s*1000).toISOString().slice(11,16);
-function evPass(c){ if(!IS_ADMIN && c.type==="LANE") return false; const f=EV.f; if(f==="all") return true; if(f==="W") return c.type==="W_WD"||c.type==="W_DEP"; if(f==="wait") return c.status!=="확정"; return c.type===f; }
+function evPass(c){ if(!IS_ADMIN && c.type==="LANE") return false; const f=EV.f; if(f==="all") return true; if(f==="W") return c.type==="W_WD"||c.type==="W_DEP"; if(f==="BIG") return c.type==="BIG_WD"||c.type==="BIG_DEP"; if(f==="wait") return c.status!=="확정"; return c.type===f; }
 function renderEvents(){
   const D = EV.data, cards = ((D&&D.cards)||[]).filter(c=>IS_ADMIN||c.type!=="LANE");
   $("#evTool").innerHTML = EVF_ALL.filter(([k])=>IS_ADMIN||k!=="LANE").map(([k,n])=>`<button data-f="${k}" class="${EV.f===k?"on":""}">${n}</button>`).join("") +
@@ -1146,15 +1152,20 @@ function evCard(c){
     <div class="tile"><div class="l">카드 생성 전 24시간</div><div class="v ${cls(b.chg24)}">${pct(b.chg24,1)}</div><div class="x">10일 ${pct(b.chg10d,1)} · BTC 24h ${pct(b.btc24,1)}</div></div>
     <div class="tile"><div class="l">펀딩 · 미결제약정</div><div class="v">${b.funding!=null?pct(b.funding,3):"—"} <span style="font-size:13px;color:var(--dim)">${oiX?"/ OI ×"+oiX.toFixed(1):""}</span></div><div class="x">${b.oi0?`${usdM(b.oi0)} → ${usdM(b.oi1)} (24h)`:""}</div></div>
     <div class="tile"><div class="l">개인 롱 계정</div><div class="v">${b.long_acc!=null?b.long_acc+"%":"—"}</div>${b.long_acc!=null?`<div class="lsb"><i style="width:${b.long_acc}%"></i></div><div class="x" style="margin-top:4px">${100-b.long_acc}% 숏</div>`:""}</div>` : `<div class="tile"><div class="l">${esc(c.note||"판 상태 없음")}</div></div>`;
-  const scan = c.scan ? (c.scan.items||[]).map(x=>`<div style="padding:6px 0;border-top:1px solid #2a2a2a"><b ${x.warn?'style="color:var(--down)"':""}>${esc(x.name)}</b> <span class="tag">${esc(x.check||"")}</span><div class="mean">${esc(x.desc||"")}</div></div>`).join("")
-    : `<div class="box mean">스캔 연결 전 — Hun's scan(deep_analyzer)을 연결하면 카드 생성 시점 판정이 여기에 붙는다</div>`;
-  const br = c.base_rate ? `<div class="box">n ${esc(c.base_rate.n)} · 24h 중앙 ${esc(c.base_rate.med24)} · 7일 중앙 ${esc(c.base_rate.med7d)} <span class="tag">${esc(c.base_rate.label||"")}</span></div>`
-    : `<div class="box mean">아직 계산 안 됨 · EV1 결과 대기</div>`;
+  const pk = k => k==="verified"?"color:var(--down)":"color:var(--dim)";
+  const S = c.scan||{};
+  const scan = S.items ? (S.items.length? S.items.map(x=>`<div style="padding:6px 0;border-top:1px solid #2a2a2a"><b>${esc(x.name)}</b> <span class="tag">${esc(x.strength||"")}</span> <span class="mean" style="font-family:var(--mono)">${esc(x.evidence||"")}</span><div class="mean">${esc(x.desc||"")}</div>${x.past?`<div style="font-size:12.5px;${pk(x.past_kind)}">${esc(x.past)}</div>`:""}</div>`).join("") : `<div class="box mean">걸린 판정 없음</div>`)
+      + (S.index?`<div style="padding:6px 0;border-top:1px solid #2a2a2a"><b>${esc(S.index.text)}</b>${S.index.past?`<div style="font-size:12.5px;${pk(S.index.past_kind)}">${esc(S.index.past)}</div>`:""}</div>`:"")
+      + `<div class="mean" style="font-size:12px;margin-top:4px">${esc(S.note||"")}</div>`
+    : `<div class="box mean">${esc(S.error||"스캔 없음")}</div>`;
+  const B = c.base_rate;
+  const br = B ? `<div class="box"><b>${esc(B.text||"")}</b><div class="mean" style="margin-top:4px">${esc(B.cond)} · n ${B.n} · 7일 중앙 ${pct(B.med7d,1)} · 7일 오른 비율 ${B.up7d!=null?B.up7d.toFixed(0)+"%":"—"}</div><div class="mean" style="font-size:12px">${esc(B.verdict||"")}</div></div>`
+    : `<div class="box mean">${c.type==="LANE"?"레인 카드는 기준표 없음":"과거 기준표 없음"}</div>`;
   const hist = (c.history||[]).map(h=>`<div><span style="color:${h.dir==="wd"?"var(--up)":"var(--down)"}">${h.dir==="wd"?"▲":"▼"}</span> <span class="d">${esc(h.day)}</span> ${esc(h.base)} ${h.dir==="wd"?"거래소에서 뺌":"거래소로 넣음"} ${usd(h.usd)}</div>`).join("");
   const R = (l,v) => `<div><div class="l">${l}</div><div class="v ${cls(v)}">${v==null?'<span class="mean">대기</span>':pct(v,1)}</div></div>`;
   return `<div class="evc"><div class="bar"><span>카드 생성 ${kstFull(c.card_t)} KST <span style="color:var(--faint)">(${utcHM(c.card_t)} UTC)</span></span><span><span style="color:var(--faint);font-family:var(--mono)">#${esc(c.id)}</span> &nbsp;<span class="st ${sc}">${sn}</span></span></div>
   <div class="in">
-    <div class="hd"><div class="av">${esc(c.base.slice(0,4))}</div><div style="flex:1"><div style="font-weight:600">${esc(c.base)} <span class="mean" style="font-weight:400">· ${c.sym?"바이낸스 선물":"선물 없음"}${c.type.startsWith("MM")||c.type.startsWith("W_")?" · BSC":""}</span></div>
+    <div class="hd"><div class="av">${esc(c.base.slice(0,4))}</div><div style="flex:1"><div style="font-weight:600">${esc(c.base)} <span class="mean" style="font-weight:400">· ${c.sym?"바이낸스 선물":"선물 없음"}${c.type.startsWith("MM")||c.type.startsWith("W_")||c.type.startsWith("BIG")?" · BSC":""}</span></div>
       <div class="mean">이벤트 ${kst(c.event_at)} KST${b.price?` · 그때 가격 ${px(b.price)}`:""}</div></div><span class="ekind ${evCls(c.type)}" style="font-size:12.5px;padding:4px 10px">${esc(c.kind)}</span></div>
     <div class="ttl">${esc(c.title)}</div>
     <div class="chips">${(c.chips||[]).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}${c.situ?`<span class="chip w">${esc(c.situ)}</span>`:""}</div>
@@ -1191,6 +1202,31 @@ function evChart(c){
   ch.timeScale().fitContent();
 }
 
+function renderUnlocks(){
+  const U = window.UN, L = (U&&U.items)||[];
+  if(!L.length){ $("#unList").innerHTML = `<div class="empty" style="border:0">앞으로 7일 안에 유통량 2% 넘는 언락 없음(또는 일정 파일 없음)</div>`; return; }
+  $("#unList").innerHTML = `<table class="flows"><tr><th>날짜</th><th>종목</th><th>유통 대비</th><th>받는 쪽</th><th>직전 10일</th><th>과거 비슷한 언락 뒤</th></tr>` +
+    (window.UN_ALL?L:L.slice(0,12)).map(x=>`<tr><td>${esc(x.date)}</td><td><b>${esc(x.symbol)}</b></td><td>${x.pct.toFixed(1)}%</td><td>${esc(x.kind||"")}${x.top_type?` <span class="mean">${esc(x.top_type)}</span>`:""}</td><td class="${cls(x.chg10d)}">${x.chg10d!=null?pct(x.chg10d,1):"—"}</td><td class="mean">${esc(x.past||"")}</td></tr>`).join("") + `</table>` +
+    (L.length>12&&!window.UN_ALL?`<div style="padding:8px 12px"><button onclick="window.UN_ALL=1;renderUnlocks()" style="background:none;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:3px 10px;cursor:pointer">${L.length-12}건 더 보기</button></div>`:"");
+  $("#unSub").textContent = `앞으로 7일 · 유통량 2% 이상 · ${L.length}건 · 일정 출처 ${U.source||""}`;
+  $("#unList").insertAdjacentHTML("beforeend", `<div class="mean" style="padding:8px 12px;font-size:12.5px">${esc(U.note||"")}</div>`);
+}
+const WR = {chain:"bsc", rt:"수익률 TOP"};
+function renderWallets(){
+  const W = window.WL, A = (W&&W.items)||[];
+  if(!A.length){ $("#wrList").innerHTML = `<div class="empty" style="border:0">순위 파일 없음</div>`; $("#wrTool").innerHTML=""; return; }
+  const ch = [...new Set(A.map(x=>x.chain))];
+  $("#wrTool").innerHTML = ch.map(c=>`<button data-c="${c}" class="${WR.chain===c?"on":""}">${c.toUpperCase()}</button>`).join("") + ["수익률 TOP","승률 TOP"].map(r=>`<button data-r="${r}" class="${WR.rt===r?"on":""}">${r}</button>`).join("");
+  $("#wrTool").onclick = e => { const d=e.target.dataset||{}; if(d.c) WR.chain=d.c; if(d.r) WR.rt=d.r; renderWallets(); };
+  const sh = a => a? a.slice(0,6)+"…"+a.slice(-4):"";
+  const ex = (c,a) => c==="eth"?`https://etherscan.io/address/${a}`:`https://bscscan.com/address/${a}`;
+  const rows = g => A.filter(x=>x.chain===WR.chain && x.rank_type===WR.rt && x.group===g);
+  const tb = g => { const L=rows(g); if(!L.length) return ""; return `<div class="sh" style="padding:8px 12px 0"><span>${g==="MM"?"MM 지갑":"감시 지갑"}</span></div><table class="flows"><tr><th>#</th><th>지갑</th><th>라벨</th><th>끝난 매매</th><th>승률</th><th>수익률(금액 가중)</th><th>중앙값</th></tr>` +
+    L.map((x,i)=>`<tr><td>${i+1}</td><td><a href="${ex(x.chain,x.wallet)}" target="_blank" rel="noopener" style="font-family:var(--mono)">${sh(x.wallet)}</a></td><td class="mean">${esc(x.label||"")}</td><td>${x.n} <span class="mean">(${x.tokens}종목)</span></td><td>${x.win!=null?x.win.toFixed(0)+"%":"—"}</td><td class="${cls(x.ret_w)}">${pct(x.ret_w,1)}</td><td class="${cls(x.ret_med)}">${pct(x.ret_med,1)}</td></tr>`).join("") + `</table>`; };
+  $("#wrList").innerHTML = (tb("감시")+tb("MM")) || `<div class="empty" style="border:0">이 조합 없음</div>`;
+  $("#wrNote").textContent = W.note||"";
+}
+
 /* 관리자 전용 탭: 지금 · 신호 기록 · 성적판 (+ 회원 관리) */
 let IS_ADMIN = false;
 const ADMIN_TABS = new Set(["now","log","score","members"]);
@@ -1206,9 +1242,9 @@ function showTab(t){
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
   document.querySelectorAll("section").forEach(s=>s.classList.toggle("on", s.id===t));
   if(t==="charts" && !CH.drawn && window.LightweightCharts){ CH.drawn=true; renderCharts(); renderTV(); }
-  if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); }
+  if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); renderWallets(); }
   if(t==="members"){ MV.armed = null; renderMembers(); }
-  if(t==="events") renderEvents();
+  if(t==="events"){ renderEvents(); renderUnlocks(); }
 }
 $("#nav").onclick = e => { const t=e.target.dataset?.t; if(!t) return; showTab(t); if(location.hash.slice(1)!==t) history.replaceState(null,"","#"+t); };
 $("#range").onclick = e => { const r=e.target.dataset?.r; if(r==null) return; RANGE=+r; document.querySelectorAll("#range button").forEach(b=>b.classList.toggle("on",b===e.target)); renderBreadth(); };
@@ -1218,13 +1254,14 @@ async function boot(){
   const D = await load();
   if (window.__DATA__ && window.__DATA__.demo) $("#demo").style.display="block";
   $("#stamp").innerHTML = D.latest ? `마지막 갱신 ${kst(D.latest.generated_at)} KST<br>다음 갱신 매시 5분` : "데이터를 불러오지 못했습니다";
-  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; window.__LIVE__ = D.live||{}; RK.data = D.ranks; renderRank(); EV.data = D.events;
+  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; window.__LIVE__ = D.live||{}; RK.data = D.ranks; renderRank(); EV.data = D.events; window.UN = D.unlocks; window.WL = D.wallets;
   { const cs=(D.events&&D.events.cards)||[], d=cs.filter(c=>Date.now()/1000-c.card_t<86400);
     const by={}; d.forEach(c=>by[c.kind]=(by[c.kind]||0)+1);
     $("#evNow").innerHTML = d.length? `<div class="card" style="padding:10px 16px;cursor:pointer" onclick="showTab('events')">이벤트 최근 24시간 <b>${d.length}건</b> <span class="mean">— ${Object.entries(by).map(([k,n])=>esc(k)+" "+n).join(" · ")}</span> <span style="color:var(--blue);float:right">보기 →</span></div>` : ""; }
   if (OC.drawn){ renderBSC(); renderOnchain(); }
   if (CH.drawn) renderCharts();
-  if ($("#events").classList.contains("on")) renderEvents();
+  if ($("#events").classList.contains("on")){ renderEvents(); renderUnlocks(); }
+  if (OC.drawn) renderWallets();
   loadInfo(); renderBreadth();
   if (IS_ADMIN){ renderNow(D); drawCardCharts(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); }
   const h = location.hash.slice(1); showTab(h && document.getElementById(h) ? h : firstTab());
