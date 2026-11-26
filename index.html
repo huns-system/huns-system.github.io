@@ -355,6 +355,7 @@ const kst = iso => { if(!iso) return "—"; const d=new Date(iso); return d.toLo
 /* ───── 가입제: Supabase ───── */
 const SUPABASE_URL = "https://czhloffxoaatqmknltvp.supabase.co";        // 예: https://abcd1234.supabase.co
 const SUPABASE_ANON_KEY = "sb_publishable_RNU9BJO89R15wlYy4AF6fQ_W8sp7DOL";  // 공개용 키(브라우저에 넣어도 되는 키)   // Settings → API 의 anon(public) 키. 공개돼도 되는 키이고, 실제 보호는 데이터베이스 규칙이 한다
+const ADM_FILES = ["latest.json","signals.json","scoreboard.json","live.json","charts.json","events.json"];
 let SB = null, ME = null, PROF = null, STARTED = false, TIMER = null;
 function sbClient(){
   if (SB) return SB;
@@ -369,7 +370,10 @@ async function sbFiles(names){
 }
 async function load(){
   if (window.__DATA__ && !window.__SB_FAKE__) return window.__DATA__;
-  const m = await sbFiles(["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json","events.json"]);
+  const names = ["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json","events.json"];
+  // 관리자: 매매 내역이 든 원본은 adm/… (데이터베이스 규칙이 관리자만 읽게 막음). 없으면 같은 이름 파일로
+  const m = await sbFiles(IS_ADMIN ? names.concat(ADM_FILES.map(n=>"adm/"+n)) : names);
+  if (IS_ADMIN) ADM_FILES.forEach(n => { if (m["adm/"+n] != null) m[n] = m["adm/"+n]; });
   return {latest:m["latest.json"], signals:m["signals.json"]||[], score:m["scoreboard.json"], breadth:m["breadth.json"],
           charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"], events:m["events.json"]};
 }
@@ -604,12 +608,12 @@ function renderNow(D){
   $("#kpis").innerHTML = [
     ["국면", rg.uptrend===true?"상승장":rg.uptrend===false?"약세장":"판정 대기", E&&E.gate? `알트 ${E.gate.alt_up?"위":"아래"} · BTC ${E.gate.btc_up?"위":"아래"} (장기 평균 대비)`:""],
     ["레인", `<span style="font-size:13px;line-height:1.6">${lanesTxt}</span>`, "초록 = 지금 국면에서 진입 가능"],
-    ["보유 중", (eopen.length+open.length)+"건", E? `엔진 ${E.engine.mode||""} · ${E.engine.alive?"실행 중":"<span class='neg'>응답 없음</span>"}`:""],
+    ["보유 중", (eopen.length+open.length)+"건", E?.engine? `엔진 ${E.engine.mode||""} · ${E.engine.alive?"실행 중":"<span class='neg'>응답 없음</span>"}`:""],
     ["알트 30일선 위 비율", lt? lt.p30+"%" : "—", lt? `90일 ${lt.p90}% · 180일 ${lt.p180}%` : ""],
   ].map(([l,v,s])=>`<div class="kpi"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
   $("#briefTitle").textContent = `이번 시간 브리핑 · ${kst(L.generated_at)} KST`;
   $("#brief").innerHTML = (L.brief||["데이터 없음"]).map(x=>`<p>${esc(x)}</p>`).join("") + (L.errors&&L.errors.length? `<p class="err">${L.errors.map(esc).join("<br>")}</p>`:"");
-  if(E) $("#openSub").textContent = `엔진(${E.engine.mode||""}) 보유 · 레인 조건을 모두 통과해 진입한 종목 · 데이터와 차트`;
+  if(E?.engine) $("#openSub").textContent = `엔진(${E.engine.mode||""}) 보유 · 레인 조건을 모두 통과해 진입한 종목 · 데이터와 차트`;
   const cards = eopen.map(engCard).concat(open.map(card));
   $("#openCards").innerHTML = cards.length ? cards.join("") : `<div class="empty">보유 종목 없음. 하루 0~몇 건이 정상이며, 조건을 낮춰 채우지 않는다.</div>`;
   renderHS(E? E.hs : null);
@@ -1015,7 +1019,8 @@ const rsn = x => (!IS_ADMIN && x.kind==="entry") ? "레인 조건 관찰 종목"
 const KIND = {entry:"관찰", onchain:"고래 이동", move:"급변", other:"기타"};
 async function infoGet(path){
   if (window.__DATA__?.info && !SB) return path==="index.json" ? window.__DATA__.info.index : window.__DATA__.info.symbols[path.replace("charts/","").replace(".json","")];
-  try{ const m = await sbFiles(["info/" + path]); return m["info/" + path] || null; }catch(e){ return null; }
+  try{ const ks = IS_ADMIN ? ["adm/info/" + path, "info/" + path] : ["info/" + path];
+       const m = await sbFiles(ks); return m[ks[0]] || m["info/" + path] || null; }catch(e){ return null; }
 }
 function renderInfo(){
   const I = INFO.index;
@@ -1220,7 +1225,8 @@ async function boot(){
   if (OC.drawn){ renderBSC(); renderOnchain(); }
   if (CH.drawn) renderCharts();
   if ($("#events").classList.contains("on")) renderEvents();
-  renderNow(D); drawCardCharts(); loadInfo(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); renderBreadth();
+  loadInfo(); renderBreadth();
+  if (IS_ADMIN){ renderNow(D); drawCardCharts(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); }
   const h = location.hash.slice(1); showTab(h && document.getElementById(h) ? h : firstTab());
 }
 if (sbClient()) SB.auth.onAuthStateChange((ev) => {
