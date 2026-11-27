@@ -291,6 +291,10 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 
 <section id="onchain">
   <div id="bscWrap"></div>
+  <h2>TOP 지갑에 새로 들어온 코인 <span class="sub" id="wnSub">아래 순위 지갑이 처음 받은 토큰</span></h2>
+  <div class="evtool" id="wnTool"></div>
+  <div class="card" style="padding:0;overflow:auto" id="wnList"></div>
+  <p class="note" id="wnNote"></p>
   <h2>지갑 과거 성적 순위 <span class="sub">감시·MM 지갑 · 우리 감시 종목 안 매매만</span></h2>
   <div class="evtool" id="wrTool"></div>
   <div class="card" style="padding:0;overflow:auto" id="wrList"></div>
@@ -376,12 +380,12 @@ async function sbFiles(names){
 }
 async function load(){
   if (window.__DATA__ && !window.__SB_FAKE__) return window.__DATA__;
-  const names = ["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json","events.json","unlocks.json","wallets.json"];
+  const names = ["latest.json","signals.json","scoreboard.json","breadth.json","charts.json","onchain.json","ranks.json","live.json","bsc.json","events.json","unlocks.json","wallets.json","wallet_new.json"];
   // 관리자: 매매 내역이 든 원본은 adm/… (데이터베이스 규칙이 관리자만 읽게 막음). 없으면 같은 이름 파일로
   const m = await sbFiles(IS_ADMIN ? names.concat(ADM_FILES.map(n=>"adm/"+n)) : names);
   if (IS_ADMIN) ADM_FILES.forEach(n => { if (m["adm/"+n] != null) m[n] = m["adm/"+n]; });
   return {latest:m["latest.json"], signals:m["signals.json"]||[], score:m["scoreboard.json"], breadth:m["breadth.json"],
-          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"], events:m["events.json"], unlocks:m["unlocks.json"], wallets:m["wallets.json"]};
+          charts:m["charts.json"], onchain:m["onchain.json"], ranks:m["ranks.json"], live:m["live.json"], bsc:m["bsc.json"], events:m["events.json"], unlocks:m["unlocks.json"], wallets:m["wallets.json"], wallet_new:m["wallet_new.json"]};
 }
 function gate(view, msg){
   const G = $("#gbox"); $("#gate").hidden = false;
@@ -1211,6 +1215,21 @@ function renderUnlocks(){
   $("#unSub").textContent = `앞으로 7일 · 유통량 2% 이상 · ${L.length}건 · 일정 출처 ${U.source||""}`;
   $("#unList").insertAdjacentHTML("beforeend", `<div class="mean" style="padding:8px 12px;font-size:12.5px">${esc(U.note||"")}</div>`);
 }
+const WN = {self:true};
+function renderWalletNew(){
+  const J = window.WN_DATA, A = (J&&J.items)||[];
+  const sh = a => a? a.slice(0,6)+"…"+a.slice(-4):"";
+  const scan = (c,k,a) => (c==="eth"?"https://etherscan.io/":"https://bscscan.com/")+k+"/"+a;
+  $("#wnTool").innerHTML = `<button data-s="1" class="${WN.self?"on":""}">지갑이 직접 실행만</button><button data-s="0" class="${!WN.self?"on":""}">받은 것 포함</button>`;
+  $("#wnTool").onclick = e => { const d=e.target.dataset||{}; if(d.s!=null){ WN.self = d.s==="1"; renderWalletNew(); } };
+  const L = A.filter(x=> !WN.self || x.self===true);
+  if(!J){ $("#wnList").innerHTML = `<div class="empty" style="border:0">아직 기록 없음 — PC 발행기가 다음 실행부터 모읍니다</div>`; $("#wnNote").textContent=""; return; }
+  $("#wnSub").textContent = `순위 지갑 BSC ${J.n_wallets?.bsc||0} · ETH ${J.eth_on?(J.n_wallets?.eth||0):"꺼짐"} · 최근 14일 · 갱신 ${kstFull(Date.parse(J.generated_at)/1000)}`;
+  $("#wnList").innerHTML = !L.length ? `<div class="empty" style="border:0">최근 14일 새 코인 없음</div>` :
+    `<table class="flows"><tr><th>시각</th><th>코인</th><th>수량</th><th>지갑</th><th>순위</th><th>방식</th><th></th></tr>` +
+    L.map(x=>`<tr><td>${kstFull(x.t)}</td><td><b>${esc(x.symbol||"?")}</b> <span class="mean">${esc(x.name||"")}</span>${x.futures?` <span class="tag">바이낸스 선물</span>`:""}${x.n_wallets>1?` <span class="tag" style="color:var(--up)">TOP 지갑 ${x.n_wallets}곳</span>`:""}<div class="mean" style="font-size:11.5px;font-family:var(--mono)">${x.chain.toUpperCase()} · <a href="${scan(x.chain,"token",x.token)}" target="_blank" rel="noopener">${sh(x.token)}</a></div></td><td>${x.amount!=null?nfmt(x.amount):"—"}</td><td><a href="${scan(x.chain,"address",x.wallet)}" target="_blank" rel="noopener" style="font-family:var(--mono)">${sh(x.wallet)}</a> <a href="https://intel.arkm.com/explorer/address/${x.wallet}" target="_blank" rel="noopener" class="mean" style="font-size:12px">아캄↗</a><div class="mean" style="font-size:11.5px">${esc(x.group||"")} · ${esc(x.label||"")}</div></td><td class="mean" style="font-size:12px">${esc((x.tags||[]).join(" · "))}</td><td>${x.self===true?"직접":x.self===false?'<span class="mean">받음</span>':"—"}</td><td><a href="${scan(x.chain,"tx",x.tx)}" target="_blank" rel="noopener" class="mean">tx</a> · <a href="https://dexscreener.com/${x.chain==="eth"?"ethereum":"bsc"}/${x.token}" target="_blank" rel="noopener" class="mean">차트</a></td></tr>`).join("") + `</table>`;
+  $("#wnNote").textContent = J.note||"";
+}
 const WR = {chain:"bsc", rt:"수익률 TOP"};
 function renderWallets(){
   const W = window.WL, A = (W&&W.items)||[];
@@ -1220,9 +1239,10 @@ function renderWallets(){
   $("#wrTool").onclick = e => { const d=e.target.dataset||{}; if(d.c) WR.chain=d.c; if(d.r) WR.rt=d.r; renderWallets(); };
   const sh = a => a? a.slice(0,6)+"…"+a.slice(-4):"";
   const ex = (c,a) => c==="eth"?`https://etherscan.io/address/${a}`:`https://bscscan.com/address/${a}`;
+  const ark = a => `https://intel.arkm.com/explorer/address/${a}`;
   const rows = g => A.filter(x=>x.chain===WR.chain && x.rank_type===WR.rt && x.group===g);
-  const tb = g => { const L=rows(g); if(!L.length) return ""; return `<div class="sh" style="padding:8px 12px 0"><span>${g==="MM"?"MM 지갑":"감시 지갑"}</span></div><table class="flows"><tr><th>#</th><th>지갑</th><th>라벨</th><th>끝난 매매</th><th>승률</th><th>수익률(금액 가중)</th><th>중앙값</th></tr>` +
-    L.map((x,i)=>`<tr><td>${i+1}</td><td><a href="${ex(x.chain,x.wallet)}" target="_blank" rel="noopener" style="font-family:var(--mono)">${sh(x.wallet)}</a></td><td class="mean">${esc(x.label||"")}</td><td>${x.n} <span class="mean">(${x.tokens}종목)</span></td><td>${x.win!=null?x.win.toFixed(0)+"%":"—"}</td><td class="${cls(x.ret_w)}">${pct(x.ret_w,1)}</td><td class="${cls(x.ret_med)}">${pct(x.ret_med,1)}</td></tr>`).join("") + `</table>`; };
+  const tb = g => { const L=rows(g); if(!L.length) return ""; return `<div class="sh" style="padding:8px 12px 0"><span>${g==="MM"?"MM 지갑":"감시 지갑"}</span></div><table class="flows"><tr><th>#</th><th>지갑</th><th></th><th>라벨</th><th>끝난 매매</th><th>승률</th><th>수익률(금액 가중)</th><th>중앙값</th></tr>` +
+    L.map((x,i)=>`<tr><td>${i+1}</td><td><a href="${ex(x.chain,x.wallet)}" target="_blank" rel="noopener" style="font-family:var(--mono)">${sh(x.wallet)}</a></td><td><a href="${ark(x.wallet)}" target="_blank" rel="noopener" class="mean" style="font-size:12px">아캄↗</a></td><td class="mean">${esc(x.label||"")}</td><td>${x.n} <span class="mean">(${x.tokens}종목)</span></td><td>${x.win!=null?x.win.toFixed(0)+"%":"—"}</td><td class="${cls(x.ret_w)}">${pct(x.ret_w,1)}</td><td class="${cls(x.ret_med)}">${pct(x.ret_med,1)}</td></tr>`).join("") + `</table>`; };
   $("#wrList").innerHTML = (tb("감시")+tb("MM")) || `<div class="empty" style="border:0">이 조합 없음</div>`;
   $("#wrNote").textContent = W.note||"";
 }
@@ -1242,7 +1262,7 @@ function showTab(t){
   document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("on", b.dataset.t===t));
   document.querySelectorAll("section").forEach(s=>s.classList.toggle("on", s.id===t));
   if(t==="charts" && !CH.drawn && window.LightweightCharts){ CH.drawn=true; renderCharts(); renderTV(); }
-  if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); renderWallets(); }
+  if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); renderWallets(); renderWalletNew(); }
   if(t==="members"){ MV.armed = null; renderMembers(); }
   if(t==="events"){ renderEvents(); renderUnlocks(); }
 }
@@ -1254,14 +1274,14 @@ async function boot(){
   const D = await load();
   if (window.__DATA__ && window.__DATA__.demo) $("#demo").style.display="block";
   $("#stamp").innerHTML = D.latest ? `마지막 갱신 ${kst(D.latest.generated_at)} KST<br>다음 갱신 매시 5분` : "데이터를 불러오지 못했습니다";
-  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; window.__LIVE__ = D.live||{}; RK.data = D.ranks; renderRank(); EV.data = D.events; window.UN = D.unlocks; window.WL = D.wallets;
+  BR = D.breadth; CH.snap = D.charts; OC.data = D.onchain; OC.bsc = D.bsc; window.__LIVE__ = D.live||{}; RK.data = D.ranks; renderRank(); EV.data = D.events; window.UN = D.unlocks; window.WL = D.wallets; window.WN_DATA = D.wallet_new;
   { const cs=(D.events&&D.events.cards)||[], d=cs.filter(c=>Date.now()/1000-c.card_t<86400);
     const by={}; d.forEach(c=>by[c.kind]=(by[c.kind]||0)+1);
     $("#evNow").innerHTML = d.length? `<div class="card" style="padding:10px 16px;cursor:pointer" onclick="showTab('events')">이벤트 최근 24시간 <b>${d.length}건</b> <span class="mean">— ${Object.entries(by).map(([k,n])=>esc(k)+" "+n).join(" · ")}</span> <span style="color:var(--blue);float:right">보기 →</span></div>` : ""; }
   if (OC.drawn){ renderBSC(); renderOnchain(); }
   if (CH.drawn) renderCharts();
   if ($("#events").classList.contains("on")){ renderEvents(); renderUnlocks(); }
-  if (OC.drawn) renderWallets();
+  if (OC.drawn){ renderWallets(); renderWalletNew(); }
   loadInfo(); renderBreadth();
   if (IS_ADMIN){ renderNow(D); drawCardCharts(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); }
   const h = location.hash.slice(1); showTab(h && document.getElementById(h) ? h : firstTab());
