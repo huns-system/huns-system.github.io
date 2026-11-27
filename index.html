@@ -26,6 +26,43 @@ nav{display:flex;gap:4px;margin:16px 0 18px;flex-wrap:wrap}
 nav button{background:none;border:1px solid var(--line);color:var(--dim);padding:7px 14px;border-radius:999px;font:inherit;font-size:14px;cursor:pointer}
 nav button.on{background:var(--text);color:#111;border-color:var(--text);font-weight:500}
 section{display:none} section.on{display:block}
+/* ───── 현황판 ───── */
+.db{--c1:#22c3a6;--c2:#e0a23a;--c3:#e5534b}
+.db .strip{height:78px;margin-bottom:12px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#111}
+.db .row{display:grid;gap:12px;margin-bottom:12px}
+.db .r1{grid-template-columns:1fr 1.15fr 1fr}
+.db .r2{grid-template-columns:1.45fr 1fr}
+@media(max-width:1000px){.db .r1,.db .r2{grid-template-columns:1fr}}
+.db .pn{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px 16px;position:relative}
+.db .pn h4{margin:0 0 10px;font-size:12px;letter-spacing:.04em;color:var(--dim);font-weight:500;display:flex;justify-content:space-between;gap:8px}
+.db .pn h4 .t{font-family:var(--mono);color:var(--faint);font-weight:400}
+.db .kv{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 14px}
+.db .kv .l{font-size:12px;color:var(--dim)} .db .kv .v{font-family:var(--mono);font-size:19px;font-weight:600}
+.db .kv .s{font-size:11.5px;color:var(--faint);font-family:var(--mono)}
+.db .core{display:flex;gap:18px;align-items:center}
+.db .core svg{flex:none}
+.db .core .big{font-family:var(--mono);font-size:30px;font-weight:700;line-height:1.1}
+.db .legend{font-family:var(--mono);font-size:12.5px;line-height:1.9}
+.db .legend i{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px;vertical-align:0}
+.db .sum{margin-top:12px;border-top:1px solid var(--line);padding-top:10px;font-size:13.5px;line-height:1.75}
+.db .sum b{font-weight:600}
+.db .mv{display:grid;grid-template-columns:62px 1fr 70px 58px 56px;gap:4px 8px;align-items:center;font-family:var(--mono);font-size:12.5px;padding:5px 0;border-top:1px solid #262626}
+.db .mv:first-of-type{border-top:0}
+.db .mv .bar{height:5px;border-radius:3px;background:#2a2a2a;overflow:hidden} .db .mv .bar>i{display:block;height:100%}
+.db .hot{border-left:3px solid var(--c1)} .db .cold{border-left:3px solid var(--c3)}
+.db table.tt{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:12.5px}
+.db table.tt th{font-family:'Noto Sans KR',sans-serif;font-weight:400;color:var(--faint);font-size:11.5px;text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+.db table.tt td{padding:5px 6px;text-align:right;border-bottom:1px solid #242424;white-space:nowrap}
+.db table.tt th:nth-child(-n+2),.db table.tt td:nth-child(-n+2){text-align:left}
+.db .sh{display:inline-block;height:6px;border-radius:3px;background:var(--c2);vertical-align:middle}
+.db .pill{font-size:11px;padding:1px 7px;border-radius:999px;border:1px solid}
+.db .pill.in{color:var(--c1);border-color:#1f6e60} .db .pill.out{color:var(--c3);border-color:#7a2f2b} .db .pill.mid{color:var(--faint);border-color:var(--line)}
+.db .feed{font-size:12.5px} .db .feed .it{display:grid;grid-template-columns:84px 64px 1fr;gap:8px;padding:5px 0;border-top:1px solid #262626}
+.db .feed .it:first-child{border-top:0} .db .feed .tm{font-family:var(--mono);color:var(--faint)} .db .feed .sy{font-family:var(--mono);font-weight:600}
+.db .seg2 button{background:none;border:1px solid var(--line);color:var(--dim);border-radius:6px;padding:2px 9px;font-size:12px;cursor:pointer;margin-left:4px}
+.db .seg2 button.on{border-color:var(--c1);color:var(--c1)}
+.db .live{font-family:var(--mono);font-size:11.5px;color:var(--faint)} .db .live b{color:var(--up);font-weight:400}
+
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px}
 .kpi{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px 14px}
 .kpi .l{font-size:12px;color:var(--dim)} .kpi .v{font-family:var(--mono);font-size:20px;font-weight:600;margin-top:2px}
@@ -213,7 +250,8 @@ svg text{font-family:'Noto Sans KR',sans-serif}
 </header>
 <div class="demo" id="demo" style="display:none">샘플 데이터로 그린 미리보기입니다. 종목·신호·비율 모두 가짜 값이며 실제 시장과 무관합니다.</div>
 <nav id="nav">
-  <button data-t="now" class="on adm" hidden>지금</button>
+  <button data-t="dash" class="on">현황판</button>
+  <button data-t="now" class="adm" hidden>지금</button>
   <button data-t="events">이벤트</button>
   <button data-t="info">종합 차트</button>
   <button data-t="rank">후보 순위</button>
@@ -224,6 +262,23 @@ svg text{font-family:'Noto Sans KR',sans-serif}
   <button data-t="score" class="adm" hidden>성적판</button>
   <button data-t="members" id="tabMembers" hidden>회원 관리</button>
 </nav>
+
+<section id="dash" class="db">
+  <div class="strip" id="dbStrip"></div>
+  <div class="row r1">
+    <div class="pn"><h4>시장 온도 <span class="t" id="dbT1"></span></h4><div class="kv" id="dbTemp"></div></div>
+    <div class="pn"><h4>바이낸스 USDT 선물 거래대금 <span class="t live" id="dbLive">불러오는 중…</span></h4><div class="core" id="dbCore"></div><div class="sum" id="dbSum"></div></div>
+    <div class="pn" style="display:flex;flex-direction:column;gap:10px">
+      <div class="hot" style="padding-left:10px"><h4>매수 체결 우위 <span class="t">최근 1시간 · 거래대금 상위 40 중</span></h4><div id="dbHot"></div></div>
+      <div class="cold" style="padding-left:10px"><h4>매도 체결 우위 <span class="t">최근 1시간 · 거래대금 상위 40 중</span></h4><div id="dbCold"></div></div>
+    </div>
+  </div>
+  <div class="row r2">
+    <div class="pn"><h4><span>거래대금 TOP 20 <span class="seg2" id="dbSort"><button data-v="vol" class="on">거래대금순</button><button data-v="tb">매수 우위순</button><button data-v="tbr">매도 우위순</button><button data-v="vx">거래 급증순</button></span></span><span class="t" id="dbT2"></span></h4><div style="overflow-x:auto" id="dbTop"></div></div>
+    <div class="pn"><h4>최근 소식 <span class="t">온체인·이벤트·지갑·언락</span></h4><div class="feed" id="dbFeed"></div></div>
+  </div>
+  <p class="note">정보 표시용 — 진입 판단 아님. 체결 우위 = 시장가 매수 체결액 ÷ 전체 체결액(바이낸스 선물, 최근 1시간 15분봉 4개 합). 0.5보다 크면 매수 쪽 시장가 주문이 많았다는 뜻이지 '돈이 들어왔다'는 뜻은 아니다. 거래 급증 = 최근 1시간 거래대금 ÷ 24시간 시간당 평균. 1분마다 바이낸스에서 직접 갱신.</p>
+</section>
 
 <section id="now">
   <div class="grid" id="kpis"></div>
@@ -1264,10 +1319,120 @@ function renderWallets(){
   $("#wrNote").textContent = W.note||"";
 }
 
+
+/* ───── 현황판 (브라우저가 바이낸스 공개 API를 직접 읽음, 1분마다) ───── */
+const DB = {sort:"vol", rows:[], timer:null, strip:false, ex:null, busy:false};
+const fU = v => v==null?"—": v>=1e9? "$"+(v/1e9).toFixed(2)+"B" : v>=1e6? "$"+(v/1e6).toFixed(0)+"M" : "$"+(v/1e3).toFixed(0)+"K";
+const fP = (v,d=2) => v==null||isNaN(v)?"—":(v>0?"+":"")+v.toFixed(d)+"%";
+const cP = v => v>0?"pos":v<0?"neg":"";
+function dbStrip(){
+  if(DB.strip) return; DB.strip=true;
+  const box=$("#dbStrip"); box.innerHTML="";
+  const c=document.createElement("div"); c.className="tradingview-widget-container"; c.style.cssText="height:100%;width:100%";
+  const w=document.createElement("div"); w.className="tradingview-widget-container__widget"; c.appendChild(w);
+  const sc=document.createElement("script"); sc.async=true; sc.src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js";
+  sc.textContent=JSON.stringify({symbols:[
+    {proName:"FOREXCOM:SPXUSD",title:"S&P 500"},{proName:"FOREXCOM:NSXUSD",title:"나스닥 100"},{proName:"TVC:US10Y",title:"미 10년물"},
+    {proName:"TVC:DXY",title:"달러 지수"},{proName:"CRYPTOCAP:BTC.D",title:"BTC 도미넌스"},{proName:"CRYPTOCAP:USDT.D",title:"USDT 도미넌스"}],
+    colorTheme:"dark",isTransparent:true,showSymbolLogo:false,locale:"kr"});
+  sc.onerror=()=>{ box.innerHTML=`<div class="mean" style="padding:14px">지표 띠(트레이딩뷰)를 못 불러옴</div>`; };
+  c.appendChild(sc); box.appendChild(c);
+}
+async function bj(u){ const r=await fetch("https://fapi.binance.com"+u); if(!r.ok) throw new Error(r.status); return r.json(); }
+async function dbLoad(){
+  if(DB.busy) return; DB.busy=true;
+  try{
+    if(!DB.ex){ const ex=await bj("/fapi/v1/exchangeInfo");
+      DB.ex=new Set(ex.symbols.filter(x=>x.contractType==="PERPETUAL"&&x.quoteAsset==="USDT"&&x.status==="TRADING"&&(x.underlyingType||"COIN")==="COIN"&&!/^(USDC|FDUSD|TUSD|USDP|BUSD|DAI|USDE|USD1|XUSD|RLUSD|EUR|AEUR)USDT$/.test(x.symbol)).map(x=>x.symbol)); }
+    const [tk,pi] = await Promise.all([bj("/fapi/v1/ticker/24hr"), bj("/fapi/v1/premiumIndex")]);
+    const fund={}; pi.forEach(x=>fund[x.symbol]=+x.lastFundingRate*100);
+    const all = tk.filter(t=>DB.ex.has(t.symbol)).map(t=>({sym:t.symbol, base:t.symbol.replace(/USDT$/,""), qv:+t.quoteVolume, ch:+t.priceChangePercent, last:+t.lastPrice, fund:fund[t.symbol]}));
+    const tot = all.reduce((a,b)=>a+b.qv,0);
+    all.sort((a,b)=>b.qv-a.qv);
+    const top = all.slice(0,40);
+    await Promise.all(top.map(async r=>{ try{
+      const k = await bj(`/fapi/v1/klines?symbol=${r.sym}&interval=15m&limit=5`);
+      const L=k.slice(-4), q=L.reduce((a,x)=>a+ +x[7],0), tb=L.reduce((a,x)=>a+ +x[10],0);
+      r.tb = q? tb/q : null; r.ch1 = (+k[k.length-1][4]/ +L[0][1]-1)*100; r.ch15=(+k[k.length-1][4]/ +k[k.length-1][1]-1)*100;
+      r.vx = r.qv? q/(r.qv/24) : null; }catch(e){} }));
+    let ls=null; try{ const j=await bj("/futures/data/globalLongShortAccountRatio?symbol=BTCUSDT&period=1h&limit=1"); ls=+j[0].longShortRatio; }catch(e){}
+    DB.data = {all, top, tot, ls, at:Date.now()};
+    dbRender();
+    $("#dbLive").innerHTML = `<b>●</b> 실시간 · ${new Date().toLocaleTimeString("ko-KR",{timeZone:"Asia/Seoul",hour12:false})} KST`;
+  }catch(e){ $("#dbLive").textContent = "바이낸스 응답 없음 — 1분 뒤 다시 시도"; }
+  DB.busy=false;
+}
+function donut(parts){
+  const R=54, C=2*Math.PI*R; let off=0;
+  return `<svg width="140" height="140" viewBox="0 0 140 140"><circle cx="70" cy="70" r="${R}" fill="none" stroke="#2a2a2a" stroke-width="14"/>`+
+    parts.map(([v,col])=>{ const d=C*v; const el=`<circle cx="70" cy="70" r="${R}" fill="none" stroke="${col}" stroke-width="14" stroke-dasharray="${d} ${C-d}" stroke-dashoffset="${-off}" transform="rotate(-90 70 70)"/>`; off+=d; return el; }).join("")+`</svg>`;
+}
+function dbRender(){
+  const X=DB.data; if(!X) return;
+  const {all,top,tot,ls}=X;
+  const g = b => all.find(r=>r.base===b)||{qv:0};
+  const btc=g("BTC"), eth=g("ETH"), alt=tot-btc.qv-eth.qv, t20=top.slice(0,20).reduce((a,b)=>a+b.qv,0);
+  const up = all.filter(r=>r.ch>0).length, n=all.length;
+  const wf = all.reduce((a,r)=>a+(r.fund||0)*r.qv,0)/(tot||1);
+  const negF = all.filter(r=>r.fund!=null&&r.fund<=-0.1).length, posF=all.filter(r=>r.fund!=null&&r.fund>=0.05).length;
+  const lt = BR && BR.latest;
+  $("#dbCore").innerHTML = donut([[btc.qv/tot,"#e0a23a"],[eth.qv/tot,"#6c8cff"],[alt/tot,"#22c3a6"]]) +
+    `<div><div class="big">${fU(tot)}</div><div class="mean" style="font-size:12px;margin-bottom:6px">24시간 · 코인 무기한 ${n}종목</div><div class="legend">
+     <div><i style="background:#e0a23a"></i>BTC ${(btc.qv/tot*100).toFixed(1)}% <span class="${cP(btc.ch)}">${fP(btc.ch)}</span></div>
+     <div><i style="background:#6c8cff"></i>ETH ${(eth.qv/tot*100).toFixed(1)}% <span class="${cP(eth.ch)}">${fP(eth.ch)}</span></div>
+     <div><i style="background:#22c3a6"></i>알트 ${(alt/tot*100).toFixed(1)}%</div>
+     <div class="mean">TOP 20 집중 ${(t20/tot*100).toFixed(1)}%</div></div></div>`;
+  $("#dbTemp").innerHTML = [
+    ["24h 오른 종목", `${(up/n*100).toFixed(0)}%`, `${up} / ${n}`],
+    ["알트 30일선 위", lt? lt.p30+"%":"—", lt? `90일 ${lt.p90}% · 180일 ${lt.p180}%`:"매일 갱신"],
+    ["펀딩 평균(거래대금 가중)", (wf>=0?"+":"")+wf.toFixed(4)+"%", `음펀딩 −0.1%↓ ${negF}개 · +0.05%↑ ${posF}개`],
+    ["BTC 계정 롱숏비", ls? ls.toFixed(2):"—", ls? (ls>1?"롱 계정이 더 많음":"숏 계정이 더 많음")+" · 1시간":""],
+    ["BTC 1시간", fP(btc.ch1), `TB ${btc.tb!=null?btc.tb.toFixed(2):"—"} · 24h ${fP(btc.ch)}`],
+    ["ETH 1시간", fP(eth.ch1), `TB ${eth.tb!=null?eth.tb.toFixed(2):"—"} · 24h ${fP(eth.ch)}`]
+  ].map(([l,v,s2])=>`<div><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s2}</div></div>`).join("");
+  $("#dbT1").textContent = "";
+  const alts = top.filter(r=>r.base!=="BTC"&&r.base!=="ETH"&&r.tb!=null);
+  const mv = (r,col) => `<div class="mv"><b>${esc(r.base)}</b><div class="bar"><i style="width:${Math.min(100,Math.abs(r.tb-0.5)*400)}%;background:${col}"></i></div><span>TB ${r.tb.toFixed(2)}</span><span class="${cP(r.ch1)}">${fP(r.ch1,1)}</span><span class="mean">×${(r.vx||0).toFixed(1)}</span></div>`;
+  const hot = alts.filter(r=>r.tb>0.52).sort((a,b)=>b.tb-a.tb).slice(0,5), cold=alts.filter(r=>r.tb<0.48).sort((a,b)=>a.tb-b.tb).slice(0,5);
+  $("#dbHot").innerHTML = hot.length? hot.map(r=>mv(r,"var(--c1)")).join("") : `<div class="mean">뚜렷한 종목 없음</div>`;
+  $("#dbCold").innerHTML = cold.length? cold.map(r=>mv(r,"var(--c3)")).join("") : `<div class="mean">뚜렷한 종목 없음</div>`;
+  // 요약(사실만)
+  const s=[];
+  s.push(`BTC는 24시간 <b class="${cP(btc.ch)}">${fP(btc.ch)}</b>, 거래대금 비중 ${(btc.qv/tot*100).toFixed(0)}% · 알트 비중 ${(alt/tot*100).toFixed(0)}%.`);
+  s.push(`종목 ${(up/n*100).toFixed(0)}%가 24시간 상승${lt?`, 알트 30일선 위 ${lt.p30}%`:""}.`);
+  const surge = alts.filter(r=>(r.vx||0)>=2).sort((a,b)=>b.vx-a.vx).slice(0,3);
+  if(surge.length) s.push(`최근 1시간 거래 급증: ${surge.map(r=>`<b>${esc(r.base)}</b> ×${r.vx.toFixed(1)}(${fP(r.ch1,1)})`).join(", ")}.`);
+  if(negF) s.push(`펀딩 −0.1% 이하 ${negF}종목 <span class="mean">(참고: EV3에서 '펀딩 극단 + OI 24시간 ×2' 동시 조건 뒤 7일은 시장보다 약했다)</span>.`);
+  $("#dbSum").innerHTML = s.join("<br>");
+  // TOP20 표
+  let rows = top.slice(0,20).slice();
+  if(DB.sort==="tb") rows.sort((a,b)=>(b.tb||0)-(a.tb||0)); else if(DB.sort==="tbr") rows.sort((a,b)=>(a.tb||1)-(b.tb||1)); else if(DB.sort==="vx") rows.sort((a,b)=>(b.vx||0)-(a.vx||0));
+  const mx = top[0].qv;
+  const pill = tb => tb==null? "" : tb>0.53? `<span class="pill in">매수 우위</span>` : tb<0.47? `<span class="pill out">매도 우위</span>` : `<span class="pill mid">비슷</span>`;
+  $("#dbTop").innerHTML = `<table class="tt"><tr><th>#</th><th>종목</th><th>24h 거래대금</th><th>비중</th><th>15분</th><th>1시간</th><th>24시간</th><th>급증</th><th>TB(1h)</th><th>펀딩</th><th></th></tr>`+
+    rows.map(r=>`<tr><td class="mean">${top.indexOf(r)+1}</td><td><b>${esc(r.base)}</b></td><td><span class="sh" style="width:${Math.max(2,r.qv/mx*70)}px"></span> ${fU(r.qv)}</td><td class="mean">${(r.qv/tot*100).toFixed(1)}%</td><td class="${cP(r.ch15)}">${fP(r.ch15)}</td><td class="${cP(r.ch1)}">${fP(r.ch1)}</td><td class="${cP(r.ch)}">${fP(r.ch)}</td><td>${r.vx!=null?"×"+r.vx.toFixed(1):"—"}</td><td>${r.tb!=null?r.tb.toFixed(2):"—"}</td><td class="${r.fund<=-0.1?"neg":""}">${r.fund!=null?r.fund.toFixed(3)+"%":"—"}</td><td>${pill(r.tb)}</td></tr>`).join("")+`</table>`;
+  $("#dbT2").textContent = "";
+}
+const dbT = t => { const d=new Date((t+9*3600)*1000), z=n=>String(n).padStart(2,"0"); return `${z(d.getUTCMonth()+1)}.${z(d.getUTCDate())} ${z(d.getUTCHours())}:${z(d.getUTCMinutes())}`; };
+function dbFeed(){
+  const it=[];
+  const EXR=/^(binance|bybit|okx|okex|kucoin|gate|bitget|mexc|htx|huobi|bingx|bitmart|coinbase|kraken|upbit|bithumb|crypto\.com|lbank|bitrue|xt|coinex)/i, isEx=l=>!!l&&EXR.test(String(l).trim());
+  ((OC.bsc&&OC.bsc.events)||[]).filter(e=>!(isEx(e.from_label)&&isEx(e.to_label))).slice(0,6).forEach(e=>it.push({t:Date.parse(e.t)/1000, sy:e.base, tx:`<span style="color:${/입금|→ 거래소/.test(e.kind)?"var(--c3)":/출금|거래소 →/.test(e.kind)?"var(--c1)":"var(--dim)"}">${esc(e.kind==="INS_MOVE"?"초기 보유 이동":e.kind)}</span> ${usd(e.usd)} <span class="mean">${esc(e.from_label||e.from)} → ${esc(e.to_label||e.to)}</span>`, go:"onchain"}));
+  ((EV.data&&EV.data.cards)||[]).filter(c=>IS_ADMIN||c.type!=="LANE").slice(0,4).forEach(c=>it.push({t:c.card_t, sy:c.base, tx:`<span style="color:var(--c2)">이벤트</span> ${esc(c.kind)}${c.base_rate&&c.base_rate.vs_state_7d!=null?` <span class="mean">· 과거 7일 시장 대비 ${fP(c.base_rate.vs_state_7d,1)}p</span>`:""}`, go:"events"}));
+  ((window.WN_DATA&&WN_DATA.items)||[]).filter(x=>x.self).slice(0,4).forEach(x=>it.push({t:x.t, sy:x.symbol||"?", tx:`<span style="color:#6c8cff">TOP 지갑 새 코인</span> <span class="mean">${esc((x.tags||[])[0]||"")}${x.n_wallets>1?` · ${x.n_wallets}곳`:""}</span>`, go:"onchain"}));
+  it.sort((a,b)=>b.t-a.t);
+  const today=new Date(Date.now()+9*3600e3).toISOString().slice(0,10);
+  const un=((window.UN&&UN.items)||[]).filter(u=>u.date>=today).slice(0,3);
+  $("#dbFeed").innerHTML = (it.length? it.slice(0,12).map(x=>`<div class="it" style="cursor:pointer" onclick="showTab('${x.go}')"><span class="tm">${dbT(x.t)}</span><span class="sy">${esc(x.sy)}</span><span>${x.tx}</span></div>`).join("") : `<div class="mean">최근 소식 없음</div>`)
+    + (un.length? `<div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--line)"><div class="mean" style="font-size:12px;margin-bottom:4px">다가오는 언락</div>${un.map(u=>`<div class="it" style="cursor:pointer" onclick="showTab('events')"><span class="tm">${esc(u.date.slice(5))}</span><span class="sy">${esc(u.symbol)}</span><span>유통 ${u.pct.toFixed(1)}% <span class="mean">${esc(u.kind||"")}</span></span></div>`).join("")}</div>`:"");
+}
+$("#dbSort").onclick = e => { const v=e.target.dataset?.v; if(!v) return; DB.sort=v; document.querySelectorAll("#dbSort button").forEach(b=>b.classList.toggle("on",b.dataset.v===v)); dbRender(); };
+function dbStart(){ dbStrip(); dbFeed(); dbLoad(); if(!DB.timer) DB.timer=setInterval(()=>{ if($("#dash").classList.contains("on") && !document.hidden) dbLoad(); }, 60000); }
+
 /* 관리자 전용 탭: 지금 · 신호 기록 · 성적판 (+ 회원 관리) */
 let IS_ADMIN = false;
 const ADMIN_TABS = new Set(["now","log","score","members"]);
-const firstTab = () => IS_ADMIN ? "now" : "info";
+const firstTab = () => "dash";
 function setAdmin(on){
   IS_ADMIN = on;
   document.querySelectorAll("nav button.adm").forEach(b=>b.hidden=!on);
@@ -1282,6 +1447,7 @@ function showTab(t){
   if(t==="onchain" && !OC.drawn){ OC.drawn=true; renderBSC(); renderOnchain(); renderWallets(); renderWalletNew(); }
   if(t==="members"){ MV.armed = null; renderMembers(); }
   if(t==="events"){ renderEvents(); renderUnlocks(); }
+  if(t==="dash") dbStart();
 }
 $("#nav").onclick = e => { const t=e.target.dataset?.t; if(!t) return; showTab(t); if(location.hash.slice(1)!==t) history.replaceState(null,"","#"+t); };
 $("#range").onclick = e => { const r=e.target.dataset?.r; if(r==null) return; RANGE=+r; document.querySelectorAll("#range button").forEach(b=>b.classList.toggle("on",b===e.target)); renderBreadth(); };
@@ -1299,6 +1465,7 @@ async function boot(){
   if (CH.drawn) renderCharts();
   if ($("#events").classList.contains("on")){ renderEvents(); renderUnlocks(); }
   if (OC.drawn){ renderWallets(); renderWalletNew(); }
+  if ($("#dash").classList.contains("on")) dbFeed();
   loadInfo(); renderBreadth();
   if (IS_ADMIN){ renderNow(D); drawCardCharts(); renderTrades(D); renderLog(D); renderEScore(D); renderScore(D); }
   const h = location.hash.slice(1); showTab(h && document.getElementById(h) ? h : firstTab());
