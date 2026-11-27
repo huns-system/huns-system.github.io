@@ -1332,8 +1332,8 @@ function dbStrip(){
   const w=document.createElement("div"); w.className="tradingview-widget-container__widget"; c.appendChild(w);
   const sc=document.createElement("script"); sc.async=true; sc.src="https://s3.tradingview.com/external-embedding/embed-widget-tickers.js";
   sc.textContent=JSON.stringify({symbols:[
-    {proName:"FOREXCOM:SPXUSD",title:"S&P 500"},{proName:"FOREXCOM:NSXUSD",title:"나스닥 100"},{proName:"TVC:US10Y",title:"미 10년물"},
-    {proName:"TVC:DXY",title:"달러 지수"},{proName:"CRYPTOCAP:BTC.D",title:"BTC 도미넌스"},{proName:"CRYPTOCAP:USDT.D",title:"USDT 도미넌스"}],
+    {proName:"TVC:US10Y",title:"미 10년물"},{proName:"TVC:DXY",title:"달러 지수"},
+    {proName:"CRYPTOCAP:BTC.D",title:"BTC 도미넌스"},{proName:"CRYPTOCAP:USDT.D",title:"USDT 도미넌스"},{proName:"CRYPTOCAP:USDC.D",title:"USDC 도미넌스"}],
     colorTheme:"dark",isTransparent:true,showSymbolLogo:false,locale:"kr"});
   sc.onerror=()=>{ box.innerHTML=`<div class="mean" style="padding:14px">지표 띠(트레이딩뷰)를 못 불러옴</div>`; };
   c.appendChild(sc); box.appendChild(c);
@@ -1383,7 +1383,7 @@ function dbRender(){
      <div><i style="background:#22c3a6"></i>알트 ${(alt/tot*100).toFixed(1)}%</div>
      <div class="mean">TOP 20 집중 ${(t20/tot*100).toFixed(1)}%</div></div></div>`;
   $("#dbTemp").innerHTML = [
-    ["24h 오른 종목", `${(up/n*100).toFixed(0)}%`, `${up} / ${n}`],
+    ["24h 오른 종목 (전체)", `${up} / ${n}`, `${(up/n*100).toFixed(0)}% · 내린 ${all.filter(r=>r.ch<0).length}`],
     ["알트 30일선 위", lt? lt.p30+"%":"—", lt? `90일 ${lt.p90}% · 180일 ${lt.p180}%`:"매일 갱신"],
     ["펀딩 평균(거래대금 가중)", (wf>=0?"+":"")+wf.toFixed(4)+"%", `음펀딩 −0.1%↓ ${negF}개 · +0.05%↑ ${posF}개`],
     ["BTC 계정 롱숏비", ls? ls.toFixed(2):"—", ls? (ls>1?"롱 계정이 더 많음":"숏 계정이 더 많음")+" · 1시간":""],
